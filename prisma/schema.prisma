@@ -1,0 +1,286 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  PRODUCTION_OPERATOR
+  HEAD_OF_PRODUCTION
+  QUALITY_UNIT
+  MANAGEMENT_COMPLIANCE
+  SYSTEM_ADMINISTRATOR
+}
+
+enum BatchStatus {
+  DRAFT
+  IN_PROGRESS
+  PENDING_HOP_REVIEW
+  PENDING_QC_REVIEW
+  RELEASED
+  REJECTED
+  QUARANTINED
+  ON_HOLD
+}
+
+enum SectionStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETE
+  APPROVED
+}
+
+enum ProductType {
+  BAR_SOAP
+  LIQUID_HAND_SOAP
+  OTHER
+}
+
+enum BatchPersonnelRole {
+  OPERATOR
+  HEAD_OF_PRODUCTION
+  QC_REVIEWER
+}
+
+enum AuditActionType {
+  CREATE
+  EDIT
+  CORRECT
+  APPROVE
+  SIGN
+  VIEW
+  EXPORT
+  DELETE
+  LOGIN_SUCCESS
+  LOGIN_FAILURE
+  LOGOUT
+}
+
+enum ReleaseOutcome {
+  RELEASED
+  REJECTED
+  QUARANTINED
+}
+
+// Matches the 11 items on the paper form's Section 3 (Pre-Production Checklist)
+enum ChecklistItemKey {
+  FORMULA_BATCH_SHEET_CURRENT
+  RAW_MATERIALS_DISPENSED_VERIFIED
+  STOREKEEPER_COSIGNATURE_OBTAINED
+  EQUIPMENT_CLEANED_WORKING
+  NO_OUT_OF_SERVICE_OR_CALIBRATION_DUE_TAGS
+  SCALES_CALIBRATION_CURRENT
+  THERMOMETERS_CALIBRATION_CURRENT
+  CROSS_CONTAMINATION_PREVENTION_IN_PLACE
+  PRODUCTION_AREA_CLEARED_PREPARED
+  PERSONAL_HYGIENE_REQUIREMENTS_MET
+  PEST_CONTROL_STATUS_CONFIRMED
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  fullName     String
+  username     String    @unique
+  email        String    @unique
+  passwordHash String
+  role         Role
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  lastLogin    DateTime?
+
+  sessions             Session[]
+  batchPersonnel       BatchPersonnel[]
+  auditTrailEntries    AuditTrailEntry[]
+  createdBatches       BatchRecord[]
+  createdFormulas      Formula[]
+  checklistOperatorFor PreProductionChecklistItem[] @relation("ChecklistOperator")
+  checklistHopSignoffs PreProductionChecklistItem[] @relation("ChecklistHopSignoff")
+  releaseDecisions     ReleaseDecision[]
+  signOffs             FinalSignOff[]
+
+  @@map("users")
+}
+
+// DB-backed session (not JWT) so deactivating a user invalidates access immediately.
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Product {
+  id                     String      @id @default(uuid()) @db.Uuid
+  productName            String
+  productCodeSku         String      @unique
+  productType            ProductType
+  finishedProductSpecRef String?
+  isActive               Boolean     @default(true)
+
+  formulas     Formula[]
+  batchRecords BatchRecord[]
+
+  @@map("products")
+}
+
+model Formula {
+  id            String   @id @default(uuid()) @db.Uuid
+  productId     String   @db.Uuid
+  product       Product  @relation(fields: [productId], references: [id])
+  formulaNumber String
+  version       String
+  effectiveDate DateTime
+  isCurrent     Boolean  @default(true)
+  createdById   String   @db.Uuid
+  createdBy     User     @relation(fields: [createdById], references: [id])
+
+  batchRecords BatchRecord[]
+
+  @@unique([productId, formulaNumber, version])
+  @@map("formulas")
+}
+
+model BatchRecord {
+  id                    String      @id @default(uuid()) @db.Uuid
+  batchNumber           String      @unique
+  productId             String      @db.Uuid
+  product               Product     @relation(fields: [productId], references: [id])
+  formulaId             String      @db.Uuid
+  formula               Formula     @relation(fields: [formulaId], references: [id])
+  formulaVersion        String
+  batchSizeTarget       Decimal     @db.Decimal(12, 3)
+  batchSizeUnit         String
+  productionDate        DateTime
+  plannedCompletionDate DateTime?
+  manufacturingSiteRoom String?
+  complaintRecallRef    String?
+  adverseEventRef       String?
+  retentionDeadline     DateTime
+  status                BatchStatus @default(DRAFT)
+  createdById           String      @db.Uuid
+  createdBy             User        @relation(fields: [createdById], references: [id])
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  personnel         BatchPersonnel[]
+  sectionStatuses   SectionCompletionStatus[]
+  checklistItems    PreProductionChecklistItem[]
+  releaseDecision   ReleaseDecision?
+  signOffs          FinalSignOff[]
+  auditTrailEntries AuditTrailEntry[]
+
+  @@index([status, productionDate])
+  @@map("batch_records")
+}
+
+model BatchPersonnel {
+  id            String             @id @default(uuid()) @db.Uuid
+  batchRecordId String             @db.Uuid
+  batchRecord   BatchRecord        @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  userId        String             @db.Uuid
+  user          User               @relation(fields: [userId], references: [id])
+  roleInBatch   BatchPersonnelRole
+  assignedAt    DateTime           @default(now())
+
+  @@unique([batchRecordId, userId, roleInBatch])
+  @@map("batch_personnel")
+}
+
+// One row per (batch, section) so the workflow engine can query lock/unlock
+// state generically instead of a bespoke status column per section table.
+model SectionCompletionStatus {
+  id            String        @id @default(uuid()) @db.Uuid
+  batchRecordId String        @db.Uuid
+  batchRecord   BatchRecord   @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  sectionNumber Int
+  status        SectionStatus @default(NOT_STARTED)
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([batchRecordId, sectionNumber])
+  @@map("section_completion_status")
+}
+
+model PreProductionChecklistItem {
+  id                     String           @id @default(uuid()) @db.Uuid
+  batchRecordId          String           @db.Uuid
+  batchRecord            BatchRecord      @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  itemKey                ChecklistItemKey
+  verified               Boolean          @default(false)
+  operatorInitialsUserId String?          @db.Uuid
+  operatorInitialsUser   User?            @relation("ChecklistOperator", fields: [operatorInitialsUserId], references: [id])
+  verifiedAt             DateTime?
+  hopSignoffUserId       String?          @db.Uuid
+  hopSignoffUser         User?            @relation("ChecklistHopSignoff", fields: [hopSignoffUserId], references: [id])
+  hopSignoffDate         DateTime?
+
+  @@unique([batchRecordId, itemKey])
+  @@map("pre_production_checklist_items")
+}
+
+model ReleaseDecision {
+  id                       String          @id @default(uuid()) @db.Uuid
+  batchRecordId            String          @unique @db.Uuid
+  batchRecord              BatchRecord     @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  finishedProductSpecRef   String?
+  inProcessResultsReviewed Boolean?
+  oosResultsPending        Boolean         @default(false)
+  decision                 ReleaseOutcome?
+  decisionBasisRationale   String?
+  reviewedById             String?         @db.Uuid
+  reviewedBy               User?           @relation(fields: [reviewedById], references: [id])
+  reviewDate               DateTime?
+
+  @@map("release_decisions")
+}
+
+model FinalSignOff {
+  id                      String      @id @default(uuid()) @db.Uuid
+  batchRecordId           String      @db.Uuid
+  batchRecord             BatchRecord @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  role                    Role
+  userId                  String      @db.Uuid
+  user                    User        @relation(fields: [userId], references: [id])
+  signatureDate           DateTime    @default(now())
+  electronicSignatureHash String
+
+  @@unique([batchRecordId, role])
+  @@map("final_sign_offs")
+}
+
+// Append-only. DB grants (see prisma/migrations) revoke UPDATE/DELETE on this
+// table for the app's runtime role so immutability holds even against a bug
+// or a compromised admin session, not just by convention in the app code.
+model AuditTrailEntry {
+  id                String          @id @default(uuid()) @db.Uuid
+  batchRecordId     String?         @db.Uuid
+  batchRecord       BatchRecord?    @relation(fields: [batchRecordId], references: [id])
+  // Nullable: a failed login with an unrecognized username has no User row to
+  // reference. attemptedUsername captures identity for that case only.
+  userId            String?         @db.Uuid
+  user              User?           @relation(fields: [userId], references: [id])
+  attemptedUsername String?
+  timestamp         DateTime        @default(now())
+  actionType        AuditActionType
+  entityType        String
+  entityId          String
+  fieldName         String?
+  oldValue          String?
+  newValue          String?
+  correctionReason  String?
+  ipAddress         String?
+  sessionId         String?
+
+  @@index([batchRecordId])
+  @@index([entityType, entityId])
+  @@map("audit_trail_entries")
+}
