@@ -45,7 +45,7 @@ export function BatchSidebar({ batchId, accessibleSections }: { batchId: string;
       })}
 
       {currentSection != null && (prevSection || nextSection) && (
-        <div className="mt-4 flex items-center justify-between border-t border-zinc-200 pt-3 dark:border-zinc-800">
+        <div className="flex items-center justify-between border-t border-zinc-200 pt-3 dark:border-zinc-800">
           {prevSection ? (
             <Link href={`/batches/${batchId}/sections/${prevSection}`} prefetch={false} className="text-xs hover:underline">
               ← Previous
@@ -62,6 +62,16 @@ export function BatchSidebar({ batchId, accessibleSections }: { batchId: string;
           )}
         </div>
       )}
+
+      {/* Plain <a>, not <Link> — this returns a binary PDF, not a page route */}
+      <a
+        href={`/batches/${batchId}/pdf`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-4 rounded border border-zinc-300 px-2 py-1.5 text-center text-xs font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+      >
+        Export PDF
+      </a>
     </nav>
   )
 }
