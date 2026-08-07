@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
-import { logout } from '@/lib/auth/actions'
 import { canAccessSection } from '@/lib/auth/permissionMatrix'
 import { destructionLookaheadCutoff } from '@/lib/retainedSample/destructionWindow'
 
@@ -42,17 +41,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6 p-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">Welcome, {user.fullName}</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Role: {user.role.replaceAll('_', ' ')}</p>
-        </div>
-        <form action={logout}>
-          <button type="submit" className="rounded border px-4 py-2 text-sm">
-            Sign out
-          </button>
-        </form>
-      </div>
+      <h1 className="text-xl font-semibold">Welcome, {user.fullName}</h1>
 
       {canCreateBatch && (
         <Link

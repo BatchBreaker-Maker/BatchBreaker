@@ -11,9 +11,9 @@ async function login(page: Page, username: string) {
 }
 
 async function logout(page: Page) {
-  // Not every page (e.g. an access-denied section) has nav chrome with a
-  // sign-out control, so go somewhere that reliably does first.
-  await page.goto('/dashboard')
+  // Sign-out is now in the persistent (app) layout header on every
+  // authenticated page (Phase 3b), so no need to detour through /dashboard
+  // first — this also doubles as a regression check that it stayed that way.
   await page.getByRole('button', { name: 'Sign out' }).click()
   await page.waitForURL('**/login')
 }
@@ -28,7 +28,9 @@ async function logout(page: Page) {
 async function submitAndWait(page: Page, buttonName: string) {
   const [response] = await Promise.all([
     page.waitForResponse((resp) => resp.request().method() === 'POST', { timeout: 120_000 }),
-    page.getByRole('button', { name: buttonName }).click(),
+    // exact: true — the (app) layout's persistent "Sign out" button (Phase
+    // 3b) otherwise substring-matches a plain "Sign" name.
+    page.getByRole('button', { name: buttonName, exact: true }).click(),
   ])
   return response
 }
@@ -80,10 +82,14 @@ test('Phase 2 happy path: full Section 1-20 chain with the real HoP/QC review wo
     await expect(page.getByText('You do not have permission to view this section.')).toBeVisible()
   }
 
-  // --- HoP assigns personnel (Section 2) ---
+  // --- HoP assigns personnel (Section 2) — free text, Production Operator
+  // multi-valued (Phase 3a) ---
   await logout(page)
   await login(page, 'hop1')
   await page.goto(`/batches/${batchId}/sections/2`)
+  await page.locator('#productionOperatorNames').fill('Pat Operator\nAlex Second')
+  await page.locator('#headOfProductionName').fill('Harper Production')
+  await page.locator('#qcReviewerName').fill('Quinn Quality')
   await submitAndWait(page, 'Save personnel')
   await expect(page.getByText('COMPLETE').first()).toBeVisible()
 
@@ -156,7 +162,10 @@ test('Phase 2 happy path: full Section 1-20 chain with the real HoP/QC review wo
 
   // Section 11 — Packaging Operations (11.1 checklist only)
   await page.goto(`/batches/${batchId}/sections/11`)
-  const sec11Boxes = page.locator('form').first().locator('input[type=checkbox]')
+  // Scoped to <main>, not just the first <form> on the page — the (app)
+  // layout's persistent header (Phase 3b) has its own sign-out <form> that
+  // now precedes every page's own content in DOM order.
+  const sec11Boxes = page.locator('main form').first().locator('input[type=checkbox]')
   const sec11Count = await checkAllAndClick(page, sec11Boxes, 'Save checklist')
   expect(sec11Count).toBe(6)
 
