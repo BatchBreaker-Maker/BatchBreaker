@@ -101,9 +101,9 @@ export async function createBatchRecord(
 
 const AssignPersonnelSchema = z.object({
   batchRecordId: z.string().uuid(),
-  operatorUserId: z.string().uuid(),
-  headOfProductionUserId: z.string().uuid(),
-  qcReviewerUserId: z.string().uuid(),
+  productionOperatorNames: z.string().min(1),
+  headOfProductionName: z.string().min(1),
+  qcReviewerName: z.string().min(1),
 })
 
 export async function assignBatchPersonnel(
@@ -115,53 +115,52 @@ export async function assignBatchPersonnel(
 
   const parsed = AssignPersonnelSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) {
-    return { error: 'Please select a user for every role.' }
+    return { error: 'Please fill in the production operator(s), Head of Production, and QC Reviewer.' }
   }
   const data = parsed.data
   requireSectionAccess(user.role, 2, 'edit')
 
-  const assignments = [
-    { userId: data.operatorUserId, roleInBatch: 'OPERATOR' as const },
-    { userId: data.headOfProductionUserId, roleInBatch: 'HEAD_OF_PRODUCTION' as const },
-    { userId: data.qcReviewerUserId, roleInBatch: 'QC_REVIEWER' as const },
-  ]
-
-  const expectedRole: Record<(typeof assignments)[number]['roleInBatch'], string> = {
-    OPERATOR: 'PRODUCTION_OPERATOR',
-    HEAD_OF_PRODUCTION: 'HEAD_OF_PRODUCTION',
-    QC_REVIEWER: 'QUALITY_UNIT',
+  const productionOperatorNames = data.productionOperatorNames
+    .split('\n')
+    .map((name) => name.trim())
+    .filter((name) => name.length > 0)
+  if (productionOperatorNames.length === 0) {
+    return { error: 'At least one Production Operator name is required.' }
   }
-  const users = await prisma.user.findMany({
-    where: { id: { in: assignments.map((a) => a.userId) } },
-  })
-  for (const a of assignments) {
-    const u = users.find((candidate) => candidate.id === a.userId)
-    if (!u || u.role !== expectedRole[a.roleInBatch]) {
-      return { error: 'One of the selected users does not hold the required role.' }
-    }
+  const headOfProductionName = data.headOfProductionName.trim()
+  const qcReviewerName = data.qcReviewerName.trim()
+
+  const qcConflictsWithOperator = productionOperatorNames.some(
+    (name) => name.toLowerCase() === qcReviewerName.toLowerCase(),
+  )
+  const qcConflictsWithHop = headOfProductionName.toLowerCase() === qcReviewerName.toLowerCase()
+  if (qcConflictsWithOperator || qcConflictsWithHop) {
+    return { error: 'QC Reviewer cannot be the same person listed as a Production Operator or Head of Production.' }
   }
 
   await prisma.$transaction([
-    prisma.batchPersonnel.deleteMany({ where: { batchRecordId: data.batchRecordId } }),
-    prisma.batchPersonnel.createMany({
-      data: assignments.map((a) => ({ ...a, batchRecordId: data.batchRecordId })),
+    prisma.batchRecord.update({
+      where: { id: data.batchRecordId },
+      data: {
+        productionOperatorNames,
+        headOfProductionName,
+        qcReviewerName,
+        status: 'IN_PROGRESS',
+      },
     }),
     prisma.sectionCompletionStatus.updateMany({
       where: { batchRecordId: data.batchRecordId, sectionNumber: 2 },
       data: { status: 'COMPLETE' },
     }),
-    prisma.batchRecord.update({
-      where: { id: data.batchRecordId },
-      data: { status: 'IN_PROGRESS' },
-    }),
   ])
 
   await recordAuditEntry({
     actionType: 'EDIT',
-    entityType: 'BatchPersonnel',
+    entityType: 'BatchRecord',
     entityId: data.batchRecordId,
     userId: user.id,
     batchRecordId: data.batchRecordId,
+    fieldName: 'personnel',
   })
 
   redirect(`/batches/${data.batchRecordId}`)

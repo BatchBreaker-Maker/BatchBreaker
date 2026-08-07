@@ -24,10 +24,7 @@ export default async function BatchOverviewPage({
   const { batchId } = await params
   const batch = await prisma.batchRecord.findUnique({
     where: { id: batchId },
-    include: {
-      personnel: { include: { user: true } },
-      sectionStatuses: true,
-    },
+    include: { sectionStatuses: true },
   })
   if (!batch) notFound()
 

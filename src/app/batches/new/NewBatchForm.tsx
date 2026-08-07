@@ -2,11 +2,13 @@
 
 import { useActionState, useState } from 'react'
 import { createBatchRecord, type FormActionState } from '@/server/batches/actions'
+import { useDefaultDateInput } from '@/lib/dateInputDefaults'
 
 export function NewBatchForm() {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(createBatchRecord, undefined)
   const [batchNumber, setBatchNumber] = useState('')
   const [confirmBatchNumber, setConfirmBatchNumber] = useState('')
+  const defaultProductionDate = useDefaultDateInput()
   const confirmTouched = confirmBatchNumber.length > 0
   const batchNumbersMatch = batchNumber === confirmBatchNumber
 
@@ -94,7 +96,14 @@ export function NewBatchForm() {
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
           <label className={labelClass} htmlFor="productionDate">Production Date</label>
-          <input id="productionDate" name="productionDate" type="date" className={inputClass} required />
+          <input
+            id="productionDate"
+            name="productionDate"
+            type="date"
+            defaultValue={defaultProductionDate}
+            className={inputClass}
+            required
+          />
         </div>
         <div className="flex flex-col gap-1">
           <label className={labelClass} htmlFor="plannedCompletionDate">Planned Completion Date</label>

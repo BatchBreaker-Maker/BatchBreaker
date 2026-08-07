@@ -93,6 +93,10 @@ export async function addPressRun(
       operatorUserId: user.id,
     },
   })
+  await prisma.sectionCompletionStatus.updateMany({
+    where: { batchRecordId: data.batchRecordId, sectionNumber: 8 },
+    data: { status: 'IN_PROGRESS' },
+  })
   await recordAuditEntry({
     actionType: 'CREATE',
     entityType: 'PressRun',

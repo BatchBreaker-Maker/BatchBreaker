@@ -90,6 +90,10 @@ export async function saveHomogeneityChecks(
       })
     }),
   )
+  await prisma.sectionCompletionStatus.updateMany({
+    where: { batchRecordId, sectionNumber: 6 },
+    data: { status: 'IN_PROGRESS' },
+  })
   await recordAuditEntry({
     actionType: 'EDIT',
     entityType: 'HomogeneityCheck',
@@ -152,6 +156,10 @@ export async function saveCureRecord(
       freeCausticCheckMethod: data.freeCausticCheckMethod || null,
       freeCausticCheckResult: data.freeCausticCheckResult || null,
     },
+  })
+  await prisma.sectionCompletionStatus.updateMany({
+    where: { batchRecordId: data.batchRecordId, sectionNumber: 6 },
+    data: { status: 'IN_PROGRESS' },
   })
   await recordAuditEntry({
     actionType: 'EDIT',

@@ -3,9 +3,11 @@
 import { useActionState } from 'react'
 import { addPressRun } from '@/server/stamping/actions'
 import type { FormActionState } from '@/server/batches/actions'
+import { useDefaultDateTimeLocal } from '@/lib/dateInputDefaults'
 
 export function PressRunForm({ batchRecordId }: { batchRecordId: string }) {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(addPressRun, undefined)
+  const defaultDateTime = useDefaultDateTimeLocal()
   const inputClass = 'rounded border border-zinc-300 px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900'
   const labelClass = 'text-sm font-medium'
 
@@ -17,7 +19,14 @@ export function PressRunForm({ batchRecordId }: { batchRecordId: string }) {
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
           <label className={labelClass} htmlFor="dateTime">Date/Time</label>
-          <input id="dateTime" name="dateTime" type="datetime-local" className={inputClass} required />
+          <input
+            id="dateTime"
+            name="dateTime"
+            type="datetime-local"
+            defaultValue={defaultDateTime}
+            className={inputClass}
+            required
+          />
         </div>
         <div className="flex flex-col gap-1">
           <label className={labelClass} htmlFor="pressRunDieStampId">Die / Stamp ID</label>

@@ -140,6 +140,10 @@ export async function savePackagingReturn(
       returnedDate: data.returnedDate ? new Date(data.returnedDate) : null,
     },
   })
+  await prisma.sectionCompletionStatus.updateMany({
+    where: { batchRecordId: data.batchRecordId, sectionNumber: 11 },
+    data: { status: 'IN_PROGRESS' },
+  })
   await recordAuditEntry({
     actionType: 'EDIT',
     entityType: 'PackagingReturn',

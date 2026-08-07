@@ -3,11 +3,13 @@
 import { useActionState } from 'react'
 import { addDeviationEntry } from '@/server/deviations/actions'
 import type { FormActionState } from '@/server/batches/actions'
+import { useDefaultDateTimeLocal } from '@/lib/dateInputDefaults'
 
 type UserOption = { id: string; fullName: string }
 
 export function DeviationEntryForm({ batchRecordId, users }: { batchRecordId: string; users: UserOption[] }) {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(addDeviationEntry, undefined)
+  const defaultDateTime = useDefaultDateTimeLocal()
   const inputClass = 'rounded border border-zinc-300 px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900'
 
   return (
@@ -18,7 +20,14 @@ export function DeviationEntryForm({ batchRecordId, users }: { batchRecordId: st
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium" htmlFor="dateTime">Date/Time</label>
-          <input id="dateTime" name="dateTime" type="datetime-local" className={inputClass} required />
+          <input
+            id="dateTime"
+            name="dateTime"
+            type="datetime-local"
+            defaultValue={defaultDateTime}
+            className={inputClass}
+            required
+          />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium" htmlFor="type">Type</label>

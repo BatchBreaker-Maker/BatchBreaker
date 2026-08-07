@@ -42,12 +42,6 @@ enum ProductType {
   OTHER
 }
 
-enum BatchPersonnelRole {
-  OPERATOR
-  HEAD_OF_PRODUCTION
-  QC_REVIEWER
-}
-
 enum AuditActionType {
   CREATE
   EDIT
@@ -195,7 +189,6 @@ model User {
   lastLogin    DateTime?
 
   sessions              Session[]
-  batchPersonnel        BatchPersonnel[]
   auditTrailEntries     AuditTrailEntry[]
   createdBatches        BatchRecord[]                @relation("BatchCreatedBy")
   noDeviationsConfirmed BatchRecord[]                @relation("NoDeviationsConfirmedBy")
@@ -268,12 +261,19 @@ model BatchRecord {
   noDeviationsConfirmedByUser   User?     @relation("NoDeviationsConfirmedBy", fields: [noDeviationsConfirmedByUserId], references: [id])
   noDeviationsConfirmedDate     DateTime?
 
+  // Section 2 — free text per user direction (2026-08-07 UI/UX pass), same
+  // rationale as the Section 1 fields above: no maintained personnel table,
+  // just what's written on the form. Operator is multi-valued (paper form
+  // allows more than one); HoP and QC Reviewer are each a single name.
+  productionOperatorNames String[]
+  headOfProductionName    String?
+  qcReviewerName          String?
+
   createdById String   @db.Uuid
   createdBy   User     @relation("BatchCreatedBy", fields: [createdById], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  personnel         BatchPersonnel[]
   sectionStatuses   SectionCompletionStatus[]
   checklistItems    PreProductionChecklistItem[]
   releaseDecision   ReleaseDecision?
@@ -302,19 +302,6 @@ model BatchRecord {
 
   @@index([status, productionDate])
   @@map("batch_records")
-}
-
-model BatchPersonnel {
-  id            String             @id @default(uuid()) @db.Uuid
-  batchRecordId String             @db.Uuid
-  batchRecord   BatchRecord        @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
-  userId        String             @db.Uuid
-  user          User               @relation(fields: [userId], references: [id])
-  roleInBatch   BatchPersonnelRole
-  assignedAt    DateTime           @default(now())
-
-  @@unique([batchRecordId, userId, roleInBatch])
-  @@map("batch_personnel")
 }
 
 // One row per (batch, section) so the workflow engine can query lock/unlock

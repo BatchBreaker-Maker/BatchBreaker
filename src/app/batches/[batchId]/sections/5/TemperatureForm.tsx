@@ -3,9 +3,11 @@
 import { useActionState } from 'react'
 import { addTemperatureEntry } from '@/server/temperatures/actions'
 import type { FormActionState } from '@/server/batches/actions'
+import { useDefaultDateTimeLocal } from '@/lib/dateInputDefaults'
 
 export function TemperatureForm({ batchRecordId }: { batchRecordId: string }) {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(addTemperatureEntry, undefined)
+  const defaultTimeOfAddition = useDefaultDateTimeLocal()
   const inputClass = 'rounded border border-zinc-300 px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900'
   const labelClass = 'text-sm font-medium'
 
@@ -37,7 +39,14 @@ export function TemperatureForm({ batchRecordId }: { batchRecordId: string }) {
         </div>
         <div className="flex flex-col gap-1">
           <label className={labelClass} htmlFor="timeOfAddition">Time of Addition</label>
-          <input id="timeOfAddition" name="timeOfAddition" type="datetime-local" className={inputClass} required />
+          <input
+            id="timeOfAddition"
+            name="timeOfAddition"
+            type="datetime-local"
+            defaultValue={defaultTimeOfAddition}
+            className={inputClass}
+            required
+          />
         </div>
       </div>
 

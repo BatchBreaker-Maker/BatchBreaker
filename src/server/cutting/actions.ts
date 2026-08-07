@@ -70,6 +70,10 @@ export async function saveCuttingOverallComments(formData: FormData): Promise<vo
     where: { id: batchRecordId },
     data: { cuttingOverallComments: comments || null },
   })
+  await prisma.sectionCompletionStatus.updateMany({
+    where: { batchRecordId, sectionNumber: 7 },
+    data: { status: 'IN_PROGRESS' },
+  })
   await recordAuditEntry({
     actionType: 'EDIT',
     entityType: 'BatchRecord',

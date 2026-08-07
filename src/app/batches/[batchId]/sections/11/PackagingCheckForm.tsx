@@ -3,9 +3,11 @@
 import { useActionState } from 'react'
 import { addPackagingCheck } from '@/server/packaging/actions'
 import type { FormActionState } from '@/server/batches/actions'
+import { useDefaultDateTimeLocal } from '@/lib/dateInputDefaults'
 
 export function PackagingCheckForm({ batchRecordId }: { batchRecordId: string }) {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(addPackagingCheck, undefined)
+  const defaultTime = useDefaultDateTimeLocal()
   const inputClass = 'rounded border border-zinc-300 px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900'
 
   return (
@@ -15,7 +17,14 @@ export function PackagingCheckForm({ batchRecordId }: { batchRecordId: string })
 
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium" htmlFor="time">Time</label>
-        <input id="time" name="time" type="datetime-local" className={inputClass} required />
+        <input
+          id="time"
+          name="time"
+          type="datetime-local"
+          defaultValue={defaultTime}
+          className={inputClass}
+          required
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-2">

@@ -3,10 +3,12 @@
 import { useActionState, useState } from 'react'
 import { addSamplingEntry } from '@/server/sampling/actions'
 import type { FormActionState } from '@/server/batches/actions'
+import { useDefaultDateTimeLocal } from '@/lib/dateInputDefaults'
 
 export function SamplingEntryForm({ batchRecordId }: { batchRecordId: string }) {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(addSamplingEntry, undefined)
   const [disposition, setDisposition] = useState('TESTED_RELEASED')
+  const defaultDateTime = useDefaultDateTimeLocal()
   const inputClass = 'rounded border border-zinc-300 px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900'
   const labelClass = 'text-sm font-medium'
 
@@ -18,7 +20,14 @@ export function SamplingEntryForm({ batchRecordId }: { batchRecordId: string }) 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
           <label className={labelClass} htmlFor="dateTime">Date/Time</label>
-          <input id="dateTime" name="dateTime" type="datetime-local" className={inputClass} required />
+          <input
+            id="dateTime"
+            name="dateTime"
+            type="datetime-local"
+            defaultValue={defaultDateTime}
+            className={inputClass}
+            required
+          />
         </div>
         <div className="flex flex-col gap-1">
           <label className={labelClass} htmlFor="samplingStage">Sampling Stage</label>

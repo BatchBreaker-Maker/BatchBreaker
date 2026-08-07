@@ -4,11 +4,13 @@ import { useActionState, useState } from 'react'
 import { addProcessingStep } from '@/server/inProcess/actions'
 import type { FormActionState } from '@/server/batches/actions'
 import { PROCESSING_STEP_DEFAULTS } from '@/lib/workflow/inProcessLabels'
+import { useDefaultDateTimeLocal } from '@/lib/dateInputDefaults'
 
 export function ProcessingStepForm({ batchRecordId }: { batchRecordId: string }) {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(addProcessingStep, undefined)
   const [stepNumber, setStepNumber] = useState('1')
   const [description, setDescription] = useState(PROCESSING_STEP_DEFAULTS[1])
+  const defaultTimePerformed = useDefaultDateTimeLocal()
 
   const inputClass = 'rounded border border-zinc-300 px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900'
   const labelClass = 'text-sm font-medium'
@@ -36,7 +38,14 @@ export function ProcessingStepForm({ batchRecordId }: { batchRecordId: string })
         </div>
         <div className="flex flex-col gap-1">
           <label className={labelClass} htmlFor="timePerformed">Time Performed</label>
-          <input id="timePerformed" name="timePerformed" type="datetime-local" className={inputClass} required />
+          <input
+            id="timePerformed"
+            name="timePerformed"
+            type="datetime-local"
+            defaultValue={defaultTimePerformed}
+            className={inputClass}
+            required
+          />
         </div>
       </div>
 
