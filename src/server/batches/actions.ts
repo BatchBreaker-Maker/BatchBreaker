@@ -6,21 +6,31 @@ import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { requireSectionAccess } from '@/lib/auth/permissionMatrix'
 import { recordAuditEntry } from '@/lib/audit/recordAuditEntry'
-import { generateBatchNumber } from '@/lib/batches/batchNumber'
 import { calculateRetentionDeadline } from '@/lib/batches/retention'
 import { IMPLEMENTED_SECTIONS } from '@/lib/workflow/sections'
 
-const CreateBatchSchema = z.object({
-  productId: z.string().uuid(),
-  formulaId: z.string().uuid(),
-  batchSizeTarget: z.coerce.number().positive(),
-  batchSizeUnit: z.string().min(1),
-  productionDate: z.string().min(1),
-  plannedCompletionDate: z.string().optional(),
-  manufacturingSiteRoom: z.string().optional(),
-  complaintRecallRef: z.string().optional(),
-  adverseEventRef: z.string().optional(),
-})
+const CreateBatchSchema = z
+  .object({
+    batchNumber: z.string().min(1),
+    confirmBatchNumber: z.string().min(1),
+    productName: z.string().min(1),
+    productCodeSku: z.string().optional(),
+    productType: z.enum(['BAR_SOAP', 'LIQUID_HAND_SOAP', 'OTHER']),
+    finishedProductSpecRef: z.string().optional(),
+    formulaNumber: z.string().min(1),
+    formulaVersion: z.string().min(1),
+    batchSizeTarget: z.coerce.number().positive(),
+    batchSizeUnit: z.string().min(1),
+    productionDate: z.string().min(1),
+    plannedCompletionDate: z.string().optional(),
+    manufacturingSiteRoom: z.string().optional(),
+    complaintRecallRef: z.string().optional(),
+    adverseEventRef: z.string().optional(),
+  })
+  .refine((data) => data.batchNumber === data.confirmBatchNumber, {
+    message: 'Batch number entries do not match.',
+    path: ['confirmBatchNumber'],
+  })
 
 export type FormActionState = { error?: string } | undefined
 
@@ -34,25 +44,30 @@ export async function createBatchRecord(
 
   const parsed = CreateBatchSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) {
-    return { error: 'Please fill in all required fields.' }
+    // Batch number mismatch is the one validation error worth naming specifically —
+    // the double-entry check exists precisely to catch typos before they're locked in.
+    const mismatch = parsed.error.issues.find((i) => i.path[0] === 'confirmBatchNumber')
+    return { error: mismatch ? mismatch.message : 'Please fill in all required fields.' }
   }
   const data = parsed.data
 
-  const formula = await prisma.formula.findUnique({ where: { id: data.formulaId } })
-  if (!formula || formula.productId !== data.productId) {
-    return { error: 'Selected formula does not match the selected product.' }
+  const existing = await prisma.batchRecord.findUnique({ where: { batchNumber: data.batchNumber } })
+  if (existing) {
+    return { error: `Batch number "${data.batchNumber}" is already in use.` }
   }
 
   const productionDate = new Date(data.productionDate)
-  const batchNumber = await generateBatchNumber(productionDate)
   const retentionDeadline = calculateRetentionDeadline(productionDate)
 
   const batch = await prisma.batchRecord.create({
     data: {
-      batchNumber,
-      productId: data.productId,
-      formulaId: data.formulaId,
-      formulaVersion: formula.version,
+      batchNumber: data.batchNumber,
+      productName: data.productName,
+      productCodeSku: data.productCodeSku || null,
+      productType: data.productType,
+      finishedProductSpecRef: data.finishedProductSpecRef || null,
+      formulaNumber: data.formulaNumber,
+      formulaVersion: data.formulaVersion,
       batchSizeTarget: data.batchSizeTarget,
       batchSizeUnit: data.batchSizeUnit,
       productionDate,
@@ -78,7 +93,7 @@ export async function createBatchRecord(
     entityId: batch.id,
     userId: user.id,
     batchRecordId: batch.id,
-    newValue: batchNumber,
+    newValue: data.batchNumber,
   })
 
   redirect(`/batches/${batch.id}`)

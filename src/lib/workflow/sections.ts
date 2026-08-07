@@ -22,6 +22,7 @@ export const SECTION_TITLES: Record<number, string> = {
   20: 'Change History',
 }
 
-// Sections with a working page in this build. The remaining sections exist
-// in the spec/data model but their UI ships in later phases (see build plan).
-export const IMPLEMENTED_SECTIONS = [1, 2, 3, 17, 18, 20] as const
+// All 20 sections have a working page as of Phase 2.
+export const IMPLEMENTED_SECTIONS = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+] as const

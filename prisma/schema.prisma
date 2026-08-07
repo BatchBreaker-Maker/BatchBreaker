@@ -83,6 +83,106 @@ enum ChecklistItemKey {
   PEST_CONTROL_STATUS_CONFIRMED
 }
 
+// Free-text supplier name/lot per raw material entry (no Supplier table, per
+// user direction), but qualification is still one of these three fixed
+// choices because it drives a real save-time gate (see recordRawMaterialEntry).
+enum SupplierQualStatus {
+  APPROVED
+  CONDITIONAL
+  BLOCKED
+}
+
+// Section 6.2 — 5 fixed checks printed on the paper form.
+enum HomogeneityCheckItem {
+  HOMOGENEITY
+  ABSENCE_OF_FOREIGN_MATTER
+  FRAGRANCE_INCORPORATION
+  COLORANT_INCORPORATION
+  NO_SEPARATION_OR_RICING
+}
+
+enum PassFail {
+  PASS
+  FAIL
+}
+
+enum CurePhase {
+  PRE_CUT
+  POST_CUT
+}
+
+enum DispositionType {
+  TESTED_RELEASED
+  RETAINED
+  DISCARDED
+}
+
+// Section 11.1 — 6 fixed items printed on the paper form.
+enum PrePackagingChecklistItemKey {
+  AREA_CLEARED
+  EQUIPMENT_CLEANED_HOP_VERIFIED
+  COMPONENTS_FIFO_STORE_LOG
+  COA_INSPECTION_REVIEWED
+  LABEL_VERSION_CONFIRMED
+  WIP_MARKED_PRODUCT_BATCH
+}
+
+// Section 13 — 8 fixed equipment rows printed on the paper form (not a
+// maintained equipment list; these are the row labels themselves).
+enum EquipmentRowKey {
+  MIXING_VESSEL_POT
+  STICK_BLENDER
+  SCALES
+  INFRARED_THERMOMETER
+  MOLDS
+  CUTTING_MACHINES
+  PACKAGING_EQUIPMENT
+  OTHER
+}
+
+enum DeviationType {
+  INCIDENT
+  DEVIATION
+  CRITICAL_DEVIATION
+}
+
+enum DeviationStatus {
+  OPEN
+  RESOLVED
+  CLOSED
+}
+
+enum YesNoNA {
+  YES
+  NO
+  NA
+}
+
+// Section 16 — 21 fixed items printed on the paper form.
+enum CompletenessReviewItemKey {
+  FORMULA_VERSION_DOCUMENTED
+  RAW_MATERIALS_RECORDED_WITH_COA_AND_QUALIFICATION
+  PRODUCTION_STEPS_COMPLETED_INITIALED
+  TEMPERATURES_RECORDED
+  SAMPLING_LOG_COMPLETE_WITH_DISPOSITION
+  PH_AND_FREE_CAUSTIC_RECORDED
+  YIELD_RECONCILIATION_COMPLETED
+  CURE_HOLD_RECORD_COMPLETED
+  CUTTING_OBSERVATIONS_RECORDED
+  COMPLAINT_RECALL_AE_FIELDS_COMPLETED_OR_NA
+  DEVIATION_SECTION_COMPLETED
+  RETAINED_SAMPLES_DOCUMENTED
+  EQUIPMENT_CLEANING_VERIFICATION_COMPLETE
+  PACKAGING_OPERATIONS_COMPLETE
+  SUBCONTRACTING_FIELD_COMPLETED_OR_NA
+  POST_PRODUCTION_CLOSEOUT_ENTRIES_MADE
+  RETENTION_DEADLINE_ENTERED
+  NO_BLANK_FIELDS
+  CORRECTIONS_PROPERLY_MADE
+  FINISHED_PRODUCT_SPEC_REFERENCED
+  BATCH_STATUS_DECISION_COMPLETED
+}
+
 model User {
   id           String    @id @default(uuid()) @db.Uuid
   fullName     String
@@ -94,15 +194,34 @@ model User {
   createdAt    DateTime  @default(now())
   lastLogin    DateTime?
 
-  sessions             Session[]
-  batchPersonnel       BatchPersonnel[]
-  auditTrailEntries    AuditTrailEntry[]
-  createdBatches       BatchRecord[]
-  createdFormulas      Formula[]
-  checklistOperatorFor PreProductionChecklistItem[] @relation("ChecklistOperator")
-  checklistHopSignoffs PreProductionChecklistItem[] @relation("ChecklistHopSignoff")
-  releaseDecisions     ReleaseDecision[]
-  signOffs             FinalSignOff[]
+  sessions              Session[]
+  batchPersonnel        BatchPersonnel[]
+  auditTrailEntries     AuditTrailEntry[]
+  createdBatches        BatchRecord[]                @relation("BatchCreatedBy")
+  noDeviationsConfirmed BatchRecord[]                @relation("NoDeviationsConfirmedBy")
+  checklistOperatorFor  PreProductionChecklistItem[] @relation("ChecklistOperator")
+  checklistHopSignoffs  PreProductionChecklistItem[] @relation("ChecklistHopSignoff")
+  releaseDecisions      ReleaseDecision[]
+  signOffs              FinalSignOff[]
+
+  rawMaterialStorekeeperVerifications RawMaterialEntry[]          @relation("RawMaterialStorekeeperVerifiedBy")
+  rawMaterialHopVerifications         RawMaterialEntry[]          @relation("RawMaterialHopVerifiedBy")
+  temperatureEntries                  TemperatureEntry[]
+  processingSteps                     ProcessingStep[]
+  stampingSetups                      StampingSetup[]
+  pressRuns                           PressRun[]
+  samplingEntries                     SamplingEntry[]
+  prePackagingChecklistItems          PrePackagingChecklistItem[]
+  packagingReturns                    PackagingReturn[]
+  retainedSampleCollections           RetainedSampleRecord[]      @relation("RetainedSampleCollectedBy")
+  retainedSampleDestructions          RetainedSampleRecord[]      @relation("RetainedSampleDestructionAuthorizedBy")
+  equipmentVerifications              EquipmentVerification[]
+  deviationsReported                  DeviationEntry[]            @relation("DeviationReportedTo")
+  deviationsResolved                  DeviationEntry[]            @relation("DeviationResolvedBy")
+  postProductionCloseouts             PostProductionCloseout[]
+  completenessInitials                CompletenessReviewItem[]    @relation("CompletenessInitials")
+  completenessSignatures              CompletenessReviewItem[]    @relation("CompletenessSignature")
+  batchNotes                          BatchNote[]
 
   @@map("users")
 }
@@ -119,45 +238,18 @@ model Session {
   @@map("sessions")
 }
 
-model Product {
-  id                     String      @id @default(uuid()) @db.Uuid
+model BatchRecord {
+  id          String @id @default(uuid()) @db.Uuid
+  batchNumber String @unique
+
+  // Free text, per user direction — no Product/Formula reference tables.
   productName            String
-  productCodeSku         String      @unique
+  productCodeSku         String?
   productType            ProductType
   finishedProductSpecRef String?
-  isActive               Boolean     @default(true)
+  formulaNumber          String
+  formulaVersion         String
 
-  formulas     Formula[]
-  batchRecords BatchRecord[]
-
-  @@map("products")
-}
-
-model Formula {
-  id            String   @id @default(uuid()) @db.Uuid
-  productId     String   @db.Uuid
-  product       Product  @relation(fields: [productId], references: [id])
-  formulaNumber String
-  version       String
-  effectiveDate DateTime
-  isCurrent     Boolean  @default(true)
-  createdById   String   @db.Uuid
-  createdBy     User     @relation(fields: [createdById], references: [id])
-
-  batchRecords BatchRecord[]
-
-  @@unique([productId, formulaNumber, version])
-  @@map("formulas")
-}
-
-model BatchRecord {
-  id                    String      @id @default(uuid()) @db.Uuid
-  batchNumber           String      @unique
-  productId             String      @db.Uuid
-  product               Product     @relation(fields: [productId], references: [id])
-  formulaId             String      @db.Uuid
-  formula               Formula     @relation(fields: [formulaId], references: [id])
-  formulaVersion        String
   batchSizeTarget       Decimal     @db.Decimal(12, 3)
   batchSizeUnit         String
   productionDate        DateTime
@@ -167,10 +259,19 @@ model BatchRecord {
   adverseEventRef       String?
   retentionDeadline     DateTime
   status                BatchStatus @default(DRAFT)
-  createdById           String      @db.Uuid
-  createdBy             User        @relation(fields: [createdById], references: [id])
-  createdAt             DateTime    @default(now())
-  updatedAt             DateTime    @updatedAt
+
+  // Section 7 batch-level summary and Section 14's "no deviations" alternative
+  // to logging entries — pragmatic one-off fields rather than a table for a
+  // single column each.
+  cuttingOverallComments        String?
+  noDeviationsConfirmedByUserId String?   @db.Uuid
+  noDeviationsConfirmedByUser   User?     @relation("NoDeviationsConfirmedBy", fields: [noDeviationsConfirmedByUserId], references: [id])
+  noDeviationsConfirmedDate     DateTime?
+
+  createdById String   @db.Uuid
+  createdBy   User     @relation("BatchCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   personnel         BatchPersonnel[]
   sectionStatuses   SectionCompletionStatus[]
@@ -178,6 +279,26 @@ model BatchRecord {
   releaseDecision   ReleaseDecision?
   signOffs          FinalSignOff[]
   auditTrailEntries AuditTrailEntry[]
+
+  rawMaterialEntries         RawMaterialEntry[]
+  temperatureEntries         TemperatureEntry[]
+  processingSteps            ProcessingStep[]
+  homogeneityChecks          HomogeneityCheck[]
+  cureRecords                CureRecord[]
+  cuttingObservations        CuttingObservation[]
+  stampingSetup              StampingSetup?
+  pressRuns                  PressRun[]
+  samplingEntries            SamplingEntry[]
+  yieldReconciliation        YieldReconciliation?
+  prePackagingChecklistItems PrePackagingChecklistItem[]
+  packagingChecks            PackagingCheck[]
+  packagingReturn            PackagingReturn?
+  retainedSampleRecord       RetainedSampleRecord?
+  equipmentVerifications     EquipmentVerification[]
+  deviations                 DeviationEntry[]
+  postProductionCloseout     PostProductionCloseout?
+  completenessReviewItems    CompletenessReviewItem[]
+  notes                      BatchNote[]
 
   @@index([status, productionDate])
   @@map("batch_records")
@@ -283,4 +404,344 @@ model AuditTrailEntry {
   @@index([batchRecordId])
   @@index([entityType, entityId])
   @@map("audit_trail_entries")
+}
+
+// ===== Section 4 — Raw Material Log =====
+model RawMaterialEntry {
+  id                      String             @id @default(uuid()) @db.Uuid
+  batchRecordId           String             @db.Uuid
+  batchRecord             BatchRecord        @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  lineNumber              Int
+  tradeNameDescription    String
+  internalPartCode        String?
+  supplierName            String
+  supplierLotBatchNumber  String
+  qtyDispensed            Decimal            @db.Decimal(12, 3)
+  unit                    String
+  coaReceived             Boolean            @default(false)
+  supplierQualStatus      SupplierQualStatus
+  notes                   String?
+  verifiedByStorekeeperId String?            @db.Uuid
+  verifiedByStorekeeper   User?              @relation("RawMaterialStorekeeperVerifiedBy", fields: [verifiedByStorekeeperId], references: [id])
+  storekeeperInitials     String?
+  storekeeperVerifiedDate DateTime?
+  verifiedByHopId         String?            @db.Uuid
+  verifiedByHop           User?              @relation("RawMaterialHopVerifiedBy", fields: [verifiedByHopId], references: [id])
+  hopVerifiedDate         DateTime?
+  createdAt               DateTime           @default(now())
+
+  @@index([supplierLotBatchNumber])
+  @@map("raw_material_entries")
+}
+
+// ===== Section 5 — Raw Material Temperatures =====
+model TemperatureEntry {
+  id                 String      @id @default(uuid()) @db.Uuid
+  batchRecordId      String      @db.Uuid
+  batchRecord        BatchRecord @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  lineNumber         Int
+  materialIngredient String
+  acceptableTempMinF Decimal     @db.Decimal(6, 2)
+  acceptableTempMaxF Decimal     @db.Decimal(6, 2)
+  actualTempF        Decimal     @db.Decimal(6, 2)
+  withinRange        Boolean
+  timeOfAddition     DateTime
+  operatorUserId     String      @db.Uuid
+  operatorUser       User        @relation(fields: [operatorUserId], references: [id])
+  createdAt          DateTime    @default(now())
+
+  @@map("temperature_entries")
+}
+
+// ===== Section 6.1 — Processing Steps =====
+model ProcessingStep {
+  id                String      @id @default(uuid()) @db.Uuid
+  batchRecordId     String      @db.Uuid
+  batchRecord       BatchRecord @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  stepNumber        Int
+  stepDescription   String
+  timePerformed     DateTime
+  performedByUserId String      @db.Uuid
+  performedByUser   User        @relation(fields: [performedByUserId], references: [id])
+  observationsNotes String?
+  createdAt         DateTime    @default(now())
+
+  @@map("processing_steps")
+}
+
+// ===== Section 6.2 — Visual Homogeneity Checks (5 fixed items) =====
+model HomogeneityCheck {
+  id            String               @id @default(uuid()) @db.Uuid
+  batchRecordId String               @db.Uuid
+  batchRecord   BatchRecord          @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  checkItem     HomogeneityCheckItem
+  timeObserved  DateTime?
+  result        PassFail?
+  comments      String?
+
+  @@unique([batchRecordId, checkItem])
+  @@map("homogeneity_checks")
+}
+
+// ===== Section 6.3 / 6.4 — Cure/Hold Record (one row per phase) =====
+model CureRecord {
+  id                       String      @id @default(uuid()) @db.Uuid
+  batchRecordId            String      @db.Uuid
+  batchRecord              BatchRecord @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  phase                    CurePhase
+  dateTimeStart            DateTime?
+  targetCureDuration       String?
+  dateTimeRemoved          DateTime?
+  curingLocationConditions String?
+  curePeriodAcceptable     Boolean?
+  // Section 6.4 (POST_CUT) only:
+  phMeasurementDateTime    DateTime?
+  phResult                 Decimal?    @db.Decimal(5, 2)
+  freeCausticCheckMethod   String?
+  freeCausticCheckResult   String?
+
+  @@unique([batchRecordId, phase])
+  @@map("cure_records")
+}
+
+// ===== Section 7 — Soap Block Cutting Observations =====
+model CuttingObservation {
+  id                          String      @id @default(uuid()) @db.Uuid
+  batchRecordId               String      @db.Uuid
+  batchRecord                 BatchRecord @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  pourNumber                  Int
+  tempTopF                    Decimal?    @db.Decimal(6, 2)
+  tempSideF                   Decimal?    @db.Decimal(6, 2)
+  tempMiddleF                 Decimal?    @db.Decimal(6, 2)
+  colorUniformity             String?
+  visibleSeparation           Boolean     @default(false)
+  foreignMatter               Boolean     @default(false)
+  fragranceAdditionalComments String?
+  createdAt                   DateTime    @default(now())
+
+  @@map("cutting_observations")
+}
+
+// ===== Section 8.1 — Stamping Setup (one row per batch) =====
+model StampingSetup {
+  id                    String      @id @default(uuid()) @db.Uuid
+  batchRecordId         String      @unique @db.Uuid
+  batchRecord           BatchRecord @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  dieStampId            String
+  dieConditionInspected Boolean     @default(false)
+  setupVerifiedByUserId String?     @db.Uuid
+  setupVerifiedByUser   User?       @relation(fields: [setupVerifiedByUserId], references: [id])
+  setupDate             DateTime?
+  totalBarsStamped      Int?
+  totalBarsRejected     Int?
+
+  @@map("stamping_setups")
+}
+
+// ===== Section 8.2 — Press Log =====
+model PressRun {
+  id                  String      @id @default(uuid()) @db.Uuid
+  batchRecordId       String      @db.Uuid
+  batchRecord         BatchRecord @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  dateTime            DateTime
+  dieStampId          String
+  impressionQuality   String?
+  barSurfaceCondition String?
+  appearanceOk        Boolean     @default(true)
+  operatorUserId      String      @db.Uuid
+  operatorUser        User        @relation(fields: [operatorUserId], references: [id])
+  createdAt           DateTime    @default(now())
+
+  @@map("press_runs")
+}
+
+// ===== Section 9 — In-Process Sampling Log =====
+model SamplingEntry {
+  id                String          @id @default(uuid()) @db.Uuid
+  batchRecordId     String          @db.Uuid
+  batchRecord       BatchRecord     @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  dateTime          DateTime
+  samplingStage     String
+  testType          String
+  resultObservation String?
+  actionTaken       String?
+  disposition       DispositionType
+  dispositionReason String?
+  samplerUserId     String          @db.Uuid
+  samplerUser       User            @relation(fields: [samplerUserId], references: [id])
+  createdAt         DateTime        @default(now())
+
+  @@map("sampling_entries")
+}
+
+// ===== Section 10 — Yield Reconciliation (one row per batch) =====
+model YieldReconciliation {
+  id                     String      @id @default(uuid()) @db.Uuid
+  batchRecordId          String      @unique @db.Uuid
+  batchRecord            BatchRecord @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  expectedYield          Decimal     @db.Decimal(12, 3)
+  expectedYieldUnit      String
+  actualYield            Decimal     @db.Decimal(12, 3)
+  actualYieldUnit        String
+  varianceAcceptable     Boolean
+  investigationInitiated Boolean?
+  notesDisposition       String?
+
+  @@map("yield_reconciliations")
+}
+
+// ===== Section 11.1 — Pre-Packaging Checklist (6 fixed items) =====
+model PrePackagingChecklistItem {
+  id             String                       @id @default(uuid()) @db.Uuid
+  batchRecordId  String                       @db.Uuid
+  batchRecord    BatchRecord                  @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  itemKey        PrePackagingChecklistItemKey
+  verified       Boolean                      @default(false)
+  verifiedById   String?                      @db.Uuid
+  verifiedByUser User?                        @relation(fields: [verifiedById], references: [id])
+  verifiedAt     DateTime?
+
+  @@unique([batchRecordId, itemKey])
+  @@map("pre_packaging_checklist_items")
+}
+
+// ===== Section 11.2 — In-Process Packaging Checks =====
+model PackagingCheck {
+  id               String      @id @default(uuid()) @db.Uuid
+  batchRecordId    String      @db.Uuid
+  batchRecord      BatchRecord @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  checkNumber      Int
+  time             DateTime
+  componentCorrect Boolean     @default(true)
+  labelCorrect     Boolean     @default(true)
+  appearanceOk     Boolean     @default(true)
+  fillWeightOk     Boolean     @default(true)
+  notes            String?
+
+  @@map("packaging_checks")
+}
+
+// ===== Section 11.3 — Unused Packaging Return (one row per batch) =====
+model PackagingReturn {
+  id                 String      @id @default(uuid()) @db.Uuid
+  batchRecordId      String      @unique @db.Uuid
+  batchRecord        BatchRecord @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  returned           YesNoNA
+  quantitiesReturned String?
+  returnedByUserId   String?     @db.Uuid
+  returnedByUser     User?       @relation(fields: [returnedByUserId], references: [id])
+  returnedDate       DateTime?
+
+  @@map("packaging_returns")
+}
+
+// ===== Section 12 — Retained Sample Record (one row per batch) =====
+model RetainedSampleRecord {
+  id                             String      @id @default(uuid()) @db.Uuid
+  batchRecordId                  String      @unique @db.Uuid
+  batchRecord                    BatchRecord @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  unitsCollected                 Int
+  sampleLabelApplied             Boolean     @default(false)
+  storageLocation                String
+  dateCollected                  DateTime
+  collectedByUserId              String      @db.Uuid
+  collectedByUser                User        @relation("RetainedSampleCollectedBy", fields: [collectedByUserId], references: [id])
+  notes                          String?
+  minimumRetentionPeriod         String?
+  scheduledDestructionReviewDate DateTime
+  destructionAuthorizedByUserId  String?     @db.Uuid
+  destructionAuthorizedByUser    User?       @relation("RetainedSampleDestructionAuthorizedBy", fields: [destructionAuthorizedByUserId], references: [id])
+  destructionDate                DateTime?
+
+  @@map("retained_sample_records")
+}
+
+// ===== Section 13 — Equipment & Cleaning Verification (8 fixed rows) =====
+model EquipmentVerification {
+  id                 String          @id @default(uuid()) @db.Uuid
+  batchRecordId      String          @db.Uuid
+  batchRecord        BatchRecord     @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  rowKey             EquipmentRowKey
+  equipmentId        String?
+  cleanedAndVerified Boolean         @default(false)
+  calibrationCurrent Boolean         @default(false)
+  verifiedByUserId   String?         @db.Uuid
+  verifiedByUser     User?           @relation(fields: [verifiedByUserId], references: [id])
+  verifiedDate       DateTime?
+
+  @@unique([batchRecordId, rowKey])
+  @@map("equipment_verifications")
+}
+
+// ===== Section 14 — Deviations & Incidents =====
+model DeviationEntry {
+  id                    String          @id @default(uuid()) @db.Uuid
+  batchRecordId         String          @db.Uuid
+  batchRecord           BatchRecord     @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  sequenceNumber        Int
+  dateTime              DateTime
+  type                  DeviationType
+  description           String
+  correctiveActionTaken String?
+  reportedToUserId      String?         @db.Uuid
+  reportedToUser        User?           @relation("DeviationReportedTo", fields: [reportedToUserId], references: [id])
+  status                DeviationStatus @default(OPEN)
+  resolvedByUserId      String?         @db.Uuid
+  resolvedByUser        User?           @relation("DeviationResolvedBy", fields: [resolvedByUserId], references: [id])
+  resolutionRationale   String?
+  resolvedDate          DateTime?
+  createdAt             DateTime        @default(now())
+
+  @@map("deviation_entries")
+}
+
+// ===== Section 15 — Bulk Storage & Post-Production Closeout (one row per batch) =====
+model PostProductionCloseout {
+  id                          String      @id @default(uuid()) @db.Uuid
+  batchRecordId               String      @unique @db.Uuid
+  batchRecord                 BatchRecord @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  bulkStorageLocation         String
+  enteredInStoreLog           Boolean     @default(false)
+  enteredInErp                YesNoNA
+  unusedRmReturned            YesNoNA
+  quantitiesRmReturned        String?
+  stepsSubcontracted          Boolean     @default(false)
+  subcontractorNameStep       String?
+  subcontractorRecordAttached Boolean?
+  batchCloseoutDate           DateTime
+  closeoutByUserId            String      @db.Uuid
+  closeoutByUser              User        @relation(fields: [closeoutByUserId], references: [id])
+
+  @@map("post_production_closeouts")
+}
+
+// ===== Section 16 — Batch Record Completeness Review (21 fixed items) =====
+model CompletenessReviewItem {
+  id                 String                    @id @default(uuid()) @db.Uuid
+  batchRecordId      String                    @db.Uuid
+  batchRecord        BatchRecord               @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  itemKey            CompletenessReviewItemKey
+  verified           Boolean                   @default(false)
+  notApplicable      Boolean                   @default(false)
+  hopInitialsUserId  String?                   @db.Uuid
+  hopInitialsUser    User?                     @relation("CompletenessInitials", fields: [hopInitialsUserId], references: [id])
+  hopSignatureUserId String?                   @db.Uuid
+  hopSignatureUser   User?                     @relation("CompletenessSignature", fields: [hopSignatureUserId], references: [id])
+  hopSignatureDate   DateTime?
+
+  @@unique([batchRecordId, itemKey])
+  @@map("completeness_review_items")
+}
+
+// ===== Section 19 — Additional Observations & Notes =====
+model BatchNote {
+  id            String      @id @default(uuid()) @db.Uuid
+  batchRecordId String      @db.Uuid
+  batchRecord   BatchRecord @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  authorUserId  String      @db.Uuid
+  authorUser    User        @relation(fields: [authorUserId], references: [id])
+  note          String
+  createdAt     DateTime    @default(now())
+
+  @@map("batch_notes")
 }

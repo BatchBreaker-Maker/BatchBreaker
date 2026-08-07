@@ -10,37 +10,6 @@ import { recordAuditEntry } from '@/lib/audit/recordAuditEntry'
 import type { FormActionState } from '@/server/batches/actions'
 import type { Role } from '@/generated/prisma/enums'
 
-export async function submitForQcReview(formData: FormData): Promise<void> {
-  const user = await verifySession()
-  if (!user) redirect('/login')
-  const batchRecordId = String(formData.get('batchRecordId') ?? '')
-  if (user.role !== 'HEAD_OF_PRODUCTION') {
-    throw new Error('Only Head of Production can submit a batch for QC review.')
-  }
-
-  const section3 = await prisma.sectionCompletionStatus.findUnique({
-    where: { batchRecordId_sectionNumber: { batchRecordId, sectionNumber: 3 } },
-  })
-  const batch = await prisma.batchRecord.findUnique({ where: { id: batchRecordId } })
-  if (!batch || batch.status !== 'IN_PROGRESS' || section3?.status !== 'APPROVED') {
-    throw new Error('Batch is not ready for QC review yet.')
-  }
-
-  await prisma.batchRecord.update({ where: { id: batchRecordId }, data: { status: 'PENDING_QC_REVIEW' } })
-  await recordAuditEntry({
-    actionType: 'EDIT',
-    entityType: 'BatchRecord',
-    entityId: batchRecordId,
-    userId: user.id,
-    batchRecordId,
-    fieldName: 'status',
-    oldValue: 'IN_PROGRESS',
-    newValue: 'PENDING_QC_REVIEW',
-  })
-
-  redirect(`/batches/${batchRecordId}`)
-}
-
 const DECISION_VALUES = ['RELEASED', 'REJECTED', 'QUARANTINED'] as const
 
 export async function saveReleaseDecision(
@@ -55,6 +24,16 @@ export async function saveReleaseDecision(
   const batch = await prisma.batchRecord.findUnique({ where: { id: batchRecordId } })
   if (!batch || batch.status !== 'PENDING_QC_REVIEW') {
     return { error: 'This batch is not pending QC review.' }
+  }
+
+  const openDeviations = await prisma.deviationEntry.findMany({
+    where: { batchRecordId, status: 'OPEN' },
+    orderBy: { sequenceNumber: 'asc' },
+  })
+  if (openDeviations.length > 0) {
+    return {
+      error: `Cannot record a release decision — open deviations must be resolved first: #${openDeviations.map((d) => d.sequenceNumber).join(', #')} (Section 14).`,
+    }
   }
 
   const decision = String(formData.get('decision') ?? '')

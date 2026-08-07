@@ -4,7 +4,6 @@ import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { canAccessSection } from '@/lib/auth/permissionMatrix'
 import { IMPLEMENTED_SECTIONS, SECTION_TITLES } from '@/lib/workflow/sections'
-import { submitForQcReview } from '@/server/release/actions'
 
 export default async function BatchOverviewPage({
   params,
@@ -26,8 +25,6 @@ export default async function BatchOverviewPage({
   const batch = await prisma.batchRecord.findUnique({
     where: { id: batchId },
     include: {
-      product: true,
-      formula: true,
       personnel: { include: { user: true } },
       sectionStatuses: true,
     },
@@ -42,7 +39,7 @@ export default async function BatchOverviewPage({
       <div>
         <h1 className="text-xl font-semibold">{batch.batchNumber}</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          {batch.product.productName} ({batch.product.productCodeSku}) — status: {batch.status.replaceAll('_', ' ')}
+          {batch.productName} {batch.productCodeSku ? `(${batch.productCodeSku})` : ''} — status: {batch.status.replaceAll('_', ' ')}
         </p>
       </div>
 
@@ -50,7 +47,7 @@ export default async function BatchOverviewPage({
         <h2 className="font-medium">Section 1 — Batch Identification</h2>
         <dl className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm max-w-2xl">
           <dt className="text-zinc-500">Formula</dt>
-          <dd>{batch.formula.formulaNumber} v{batch.formulaVersion}</dd>
+          <dd>{batch.formulaNumber} v{batch.formulaVersion}</dd>
           <dt className="text-zinc-500">Batch size</dt>
           <dd>{batch.batchSizeTarget.toString()} {batch.batchSizeUnit}</dd>
           <dt className="text-zinc-500">Production date</dt>
@@ -86,17 +83,6 @@ export default async function BatchOverviewPage({
             ))}
         </ul>
       </section>
-
-      {user.role === 'HEAD_OF_PRODUCTION' &&
-        batch.status === 'IN_PROGRESS' &&
-        statusBySection.get(3) === 'APPROVED' && (
-          <form action={submitForQcReview}>
-            <input type="hidden" name="batchRecordId" value={batch.id} />
-            <button type="submit" className="rounded bg-foreground px-4 py-2 text-sm font-medium text-background">
-              Submit for QC review
-            </button>
-          </form>
-        )}
     </div>
   )
 }

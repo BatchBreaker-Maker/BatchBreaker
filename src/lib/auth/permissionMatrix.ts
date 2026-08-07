@@ -29,7 +29,13 @@ export const SECTION_ACCESS: Record<number, Record<MatrixRole, AccessLevel>> = {
   11: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
   12: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'view', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
   13: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'view', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  14: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'view', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  // Spec §2.2 lists QC's cell as "View / Review" (vs. plain "View" elsewhere)
+  // and §3.6 requires open deviations be "explicitly cleared by QC with
+  // documented rationale" — same compound-cell pattern as Sections 4/10/11's
+  // "Verify/Co-sign"/"Approve"/"Verify", which this matrix maps to 'signoff'.
+  // Mapped consistently: QUALITY_UNIT gets 'signoff' here so resolveDeviation
+  // can gate on it.
+  14: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'view', QUALITY_UNIT: 'signoff', MANAGEMENT_COMPLIANCE: 'view' },
   15: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
   16: { PRODUCTION_OPERATOR: 'none', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
   17: { PRODUCTION_OPERATOR: 'none', HEAD_OF_PRODUCTION: 'view', QUALITY_UNIT: 'signoff', MANAGEMENT_COMPLIANCE: 'view' },

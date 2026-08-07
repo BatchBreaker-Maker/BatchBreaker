@@ -28,33 +28,6 @@ async function main() {
     })
   }
   console.log(`Seeded ${SEED_USERS.length} users (password for all: ${DEV_PASSWORD})`)
-
-  const admin = await prisma.user.findUniqueOrThrow({ where: { username: 'admin1' } })
-
-  const product = await prisma.product.upsert({
-    where: { productCodeSku: 'BAR-LAV-001' },
-    update: {},
-    create: {
-      productName: 'Lavender Oatmeal Bar Soap',
-      productCodeSku: 'BAR-LAV-001',
-      productType: 'BAR_SOAP',
-      finishedProductSpecRef: 'SPEC-BAR-LAV-001',
-    },
-  })
-
-  const formula = await prisma.formula.upsert({
-    where: { productId_formulaNumber_version: { productId: product.id, formulaNumber: 'MFR-LAV-001', version: '1.0' } },
-    update: {},
-    create: {
-      productId: product.id,
-      formulaNumber: 'MFR-LAV-001',
-      version: '1.0',
-      effectiveDate: new Date('2026-01-01'),
-      isCurrent: true,
-      createdById: admin.id,
-    },
-  })
-  console.log(`Seeded product "${product.productName}" with formula ${formula.formulaNumber} v${formula.version}`)
 }
 
 main()
