@@ -2,6 +2,7 @@
 
 import { z } from 'zod'
 import { redirect } from 'next/navigation'
+import { redirectToBatch } from '@/lib/navigation/redirectToBatch'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { requireSectionAccess } from '@/lib/auth/permissionMatrix'
@@ -47,5 +48,5 @@ export async function addBatchNote(
     newValue: data.note.slice(0, 200),
   })
 
-  redirect(`/batches/${data.batchRecordId}/sections/19`)
+  redirectToBatch(`/batches/${data.batchRecordId}/sections/19`)
 }

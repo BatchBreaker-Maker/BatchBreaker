@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react'
 import { createBatchRecord, type FormActionState } from '@/server/batches/actions'
 import { useDefaultDateInput } from '@/lib/dateInputDefaults'
+import { Button, Input, Label, Select } from '@/components/ui'
 
 export function NewBatchForm() {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(createBatchRecord, undefined)
@@ -12,17 +13,13 @@ export function NewBatchForm() {
   const confirmTouched = confirmBatchNumber.length > 0
   const batchNumbersMatch = batchNumber === confirmBatchNumber
 
-  const inputClass = 'rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900'
-  const labelClass = 'text-sm font-medium'
-
   return (
-    <form action={formAction} className="flex flex-col gap-4 w-full max-w-lg">
+    <form action={formAction} className="flex w-full max-w-lg flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <label className={labelClass} htmlFor="batchNumber">Batch Number</label>
-        <input
+        <Label htmlFor="batchNumber">Batch Number</Label>
+        <Input
           id="batchNumber"
           name="batchNumber"
-          className={inputClass}
           value={batchNumber}
           onChange={(e) => setBatchNumber(e.target.value)}
           required
@@ -30,111 +27,105 @@ export function NewBatchForm() {
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className={labelClass} htmlFor="confirmBatchNumber">Confirm Batch Number</label>
-        <input
+        <Label htmlFor="confirmBatchNumber">Confirm Batch Number</Label>
+        <Input
           id="confirmBatchNumber"
           name="confirmBatchNumber"
-          className={inputClass}
           value={confirmBatchNumber}
           onChange={(e) => setConfirmBatchNumber(e.target.value)}
           required
         />
         {confirmTouched && !batchNumbersMatch && (
-          <p className="text-sm text-red-600">Batch numbers do not match.</p>
+          <p className="text-sm text-danger">Batch numbers do not match.</p>
         )}
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-text-muted">
           Enter the batch number twice to confirm it&apos;s correct. It cannot be changed after the batch is created.
         </p>
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className={labelClass} htmlFor="productName">Product Name</label>
-        <input id="productName" name="productName" className={inputClass} required />
+        <Label htmlFor="productName">Product Name</Label>
+        <Input id="productName" name="productName" required />
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className={labelClass} htmlFor="productCodeSku">Product Code / SKU</label>
-        <input id="productCodeSku" name="productCodeSku" className={inputClass} />
+        <Label htmlFor="productCodeSku">Product Code / SKU</Label>
+        <Input id="productCodeSku" name="productCodeSku" />
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className={labelClass} htmlFor="productType">Product Type</label>
-        <select id="productType" name="productType" className={inputClass} defaultValue="BAR_SOAP" required>
+        <Label htmlFor="productType">Product Type</Label>
+        <Select id="productType" name="productType" defaultValue="BAR_SOAP" required>
           <option value="BAR_SOAP">Bar Soap</option>
           <option value="LIQUID_HAND_SOAP">Liquid Hand Soap</option>
           <option value="OTHER">Other</option>
-        </select>
+        </Select>
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className={labelClass} htmlFor="finishedProductSpecRef">Finished Product Specification Reference</label>
-        <input id="finishedProductSpecRef" name="finishedProductSpecRef" className={inputClass} />
+        <Label htmlFor="finishedProductSpecRef">Finished Product Specification Reference</Label>
+        <Input id="finishedProductSpecRef" name="finishedProductSpecRef" />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
-          <label className={labelClass} htmlFor="formulaNumber">Formula / Master Formula Record #</label>
-          <input id="formulaNumber" name="formulaNumber" className={inputClass} required />
+          <Label htmlFor="formulaNumber">Formula / Master Formula Record #</Label>
+          <Input id="formulaNumber" name="formulaNumber" required />
         </div>
         <div className="flex flex-col gap-1">
-          <label className={labelClass} htmlFor="formulaVersion">Formula Version / Revision</label>
-          <input id="formulaVersion" name="formulaVersion" className={inputClass} required />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1">
-          <label className={labelClass} htmlFor="batchSizeTarget">Batch Size (target)</label>
-          <input id="batchSizeTarget" name="batchSizeTarget" type="number" step="0.001" min="0" className={inputClass} required />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className={labelClass} htmlFor="batchSizeUnit">Unit</label>
-          <input id="batchSizeUnit" name="batchSizeUnit" placeholder="lb" className={inputClass} required />
+          <Label htmlFor="formulaVersion">Formula Version / Revision</Label>
+          <Input id="formulaVersion" name="formulaVersion" required />
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
-          <label className={labelClass} htmlFor="productionDate">Production Date</label>
-          <input
+          <Label htmlFor="batchSizeTarget">Batch Size (target)</Label>
+          <Input id="batchSizeTarget" name="batchSizeTarget" type="number" step="0.001" min="0" required />
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="batchSizeUnit">Unit</Label>
+          <Input id="batchSizeUnit" name="batchSizeUnit" placeholder="lb" required />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="productionDate">Production Date</Label>
+          <Input
             id="productionDate"
             name="productionDate"
             type="date"
             defaultValue={defaultProductionDate}
-            className={inputClass}
             required
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className={labelClass} htmlFor="plannedCompletionDate">Planned Completion Date</label>
-          <input id="plannedCompletionDate" name="plannedCompletionDate" type="date" className={inputClass} />
+          <Label htmlFor="plannedCompletionDate">Planned Completion Date</Label>
+          <Input id="plannedCompletionDate" name="plannedCompletionDate" type="date" />
         </div>
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className={labelClass} htmlFor="manufacturingSiteRoom">Manufacturing Site / Room</label>
-        <input id="manufacturingSiteRoom" name="manufacturingSiteRoom" className={inputClass} />
+        <Label htmlFor="manufacturingSiteRoom">Manufacturing Site / Room</Label>
+        <Input id="manufacturingSiteRoom" name="manufacturingSiteRoom" />
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className={labelClass} htmlFor="complaintRecallRef">Complaint / Recall Cross-Reference # (if applicable)</label>
-        <input id="complaintRecallRef" name="complaintRecallRef" className={inputClass} />
+        <Label htmlFor="complaintRecallRef">Complaint / Recall Cross-Reference # (if applicable)</Label>
+        <Input id="complaintRecallRef" name="complaintRecallRef" />
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className={labelClass} htmlFor="adverseEventRef">Adverse Event (SAE) Cross-Reference # (if applicable)</label>
-        <input id="adverseEventRef" name="adverseEventRef" className={inputClass} />
+        <Label htmlFor="adverseEventRef">Adverse Event (SAE) Cross-Reference # (if applicable)</Label>
+        <Input id="adverseEventRef" name="adverseEventRef" />
       </div>
 
-      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state?.error && <p className="text-sm text-danger">{state.error}</p>}
 
-      <button
-        type="submit"
-        disabled={pending || (confirmTouched && !batchNumbersMatch)}
-        className="self-start rounded bg-foreground px-4 py-2 font-medium text-background disabled:opacity-50"
-      >
+      <Button type="submit" disabled={pending || (confirmTouched && !batchNumbersMatch)} className="self-start">
         {pending ? 'Creating…' : 'Create batch record'}
-      </button>
+      </Button>
     </form>
   )
 }

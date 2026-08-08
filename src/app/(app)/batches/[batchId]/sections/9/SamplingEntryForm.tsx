@@ -4,83 +4,67 @@ import { useActionState, useState } from 'react'
 import { addSamplingEntry } from '@/server/sampling/actions'
 import type { FormActionState } from '@/server/batches/actions'
 import { useDefaultDateTimeLocal } from '@/lib/dateInputDefaults'
+import { Button, Card, Input, Label, Select, Textarea } from '@/components/ui'
 
 export function SamplingEntryForm({ batchRecordId }: { batchRecordId: string }) {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(addSamplingEntry, undefined)
   const [disposition, setDisposition] = useState('TESTED_RELEASED')
   const defaultDateTime = useDefaultDateTimeLocal()
-  const inputClass = 'rounded border border-zinc-300 px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900'
-  const labelClass = 'text-sm font-medium'
 
   return (
-    <form action={formAction} className="flex flex-col gap-3 w-full max-w-2xl border border-zinc-200 rounded p-4 dark:border-zinc-800">
-      <input type="hidden" name="batchRecordId" value={batchRecordId} />
-      <h3 className="text-sm font-semibold">Add sampling entry</h3>
+    <Card className="w-full max-w-2xl">
+      <form action={formAction} className="flex flex-col gap-3">
+        <input type="hidden" name="batchRecordId" value={batchRecordId} />
+        <h3 className="text-sm font-semibold text-text">Add sampling entry</h3>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          <label className={labelClass} htmlFor="dateTime">Date/Time</label>
-          <input
-            id="dateTime"
-            name="dateTime"
-            type="datetime-local"
-            defaultValue={defaultDateTime}
-            className={inputClass}
-            required
-          />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="dateTime">Date/Time</Label>
+            <Input id="dateTime" name="dateTime" type="datetime-local" defaultValue={defaultDateTime} required />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="samplingStage">Sampling Stage</Label>
+            <Input id="samplingStage" name="samplingStage" required />
+          </div>
         </div>
+
         <div className="flex flex-col gap-1">
-          <label className={labelClass} htmlFor="samplingStage">Sampling Stage</label>
-          <input id="samplingStage" name="samplingStage" className={inputClass} required />
+          <Label htmlFor="testType">Test Type</Label>
+          <Input id="testType" name="testType" placeholder="visual, odor, etc." required />
         </div>
-      </div>
 
-      <div className="flex flex-col gap-1">
-        <label className={labelClass} htmlFor="testType">Test Type</label>
-        <input id="testType" name="testType" placeholder="visual, odor, etc." className={inputClass} required />
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label className={labelClass} htmlFor="resultObservation">Result / Observation</label>
-        <textarea id="resultObservation" name="resultObservation" rows={2} className={inputClass} />
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label className={labelClass} htmlFor="actionTaken">Action Taken</label>
-        <textarea id="actionTaken" name="actionTaken" rows={2} className={inputClass} />
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label className={labelClass} htmlFor="disposition">Disposition</label>
-        <select
-          id="disposition"
-          name="disposition"
-          className={inputClass}
-          value={disposition}
-          onChange={(e) => setDisposition(e.target.value)}
-        >
-          <option value="TESTED_RELEASED">Tested &amp; Released</option>
-          <option value="RETAINED">Retained</option>
-          <option value="DISCARDED">Discarded</option>
-        </select>
-      </div>
-
-      {disposition === 'DISCARDED' && (
         <div className="flex flex-col gap-1">
-          <label className={labelClass} htmlFor="dispositionReason">Reason for Discarding</label>
-          <input id="dispositionReason" name="dispositionReason" className={inputClass} required />
+          <Label htmlFor="resultObservation">Result / Observation</Label>
+          <Textarea id="resultObservation" name="resultObservation" rows={2} />
         </div>
-      )}
 
-      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="actionTaken">Action Taken</Label>
+          <Textarea id="actionTaken" name="actionTaken" rows={2} />
+        </div>
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="self-start rounded bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
-      >
-        {pending ? 'Adding…' : 'Add entry'}
-      </button>
-    </form>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="disposition">Disposition</Label>
+          <Select id="disposition" name="disposition" value={disposition} onChange={(e) => setDisposition(e.target.value)}>
+            <option value="TESTED_RELEASED">Tested &amp; Released</option>
+            <option value="RETAINED">Retained</option>
+            <option value="DISCARDED">Discarded</option>
+          </Select>
+        </div>
+
+        {disposition === 'DISCARDED' && (
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="dispositionReason">Reason for Discarding</Label>
+            <Input id="dispositionReason" name="dispositionReason" required />
+          </div>
+        )}
+
+        {state?.error && <p className="text-sm text-danger">{state.error}</p>}
+
+        <Button type="submit" disabled={pending} className="self-start">
+          {pending ? 'Adding…' : 'Add entry'}
+        </Button>
+      </form>
+    </Card>
   )
 }

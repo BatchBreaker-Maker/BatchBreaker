@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { redirectToBatch } from '@/lib/navigation/redirectToBatch'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { requireSectionAccess } from '@/lib/auth/permissionMatrix'
@@ -63,5 +64,5 @@ export async function saveEquipmentVerification(
     batchRecordId,
   })
 
-  redirect(`/batches/${batchRecordId}/sections/13`)
+  redirectToBatch(`/batches/${batchRecordId}/sections/13`)
 }

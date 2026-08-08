@@ -14,7 +14,7 @@ export default async function Section10Page({
   if (!canAccessSection(user.role, 10, 'view')) {
     return (
       <div className="p-8">
-        <p className="text-sm text-red-600">You do not have permission to view this section.</p>
+        <p className="text-sm text-danger">You do not have permission to view this section.</p>
       </div>
     )
   }
@@ -36,15 +36,15 @@ export default async function Section10Page({
   }
 
   return (
-    <div className="flex flex-col gap-6 p-8">
-      <h1 className="text-xl font-semibold">{batch.batchNumber} — Section 10: Yield Reconciliation</h1>
+    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+      <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 10: Yield Reconciliation</h1>
 
       {yieldRec && (
-        <dl className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm max-w-lg">
-          <dt className="text-zinc-500">Variance</dt>
-          <dd>{variance?.toFixed(3)} {yieldRec.actualYieldUnit}</dd>
-          <dt className="text-zinc-500">Variance %</dt>
-          <dd className={Math.abs(variancePct ?? 0) > 5 ? 'font-medium text-amber-700 dark:text-amber-500' : ''}>
+        <dl className="grid max-w-lg grid-cols-2 gap-x-8 gap-y-2 text-sm">
+          <dt className="text-text-muted">Variance</dt>
+          <dd className="text-text">{variance?.toFixed(3)} {yieldRec.actualYieldUnit}</dd>
+          <dt className="text-text-muted">Variance %</dt>
+          <dd className={Math.abs(variancePct ?? 0) > 5 ? 'font-medium text-warning' : 'text-text'}>
             {variancePct?.toFixed(2)}%
           </dd>
         </dl>

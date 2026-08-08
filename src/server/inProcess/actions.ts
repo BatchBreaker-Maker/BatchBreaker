@@ -2,6 +2,7 @@
 
 import { z } from 'zod'
 import { redirect } from 'next/navigation'
+import { redirectToBatch } from '@/lib/navigation/redirectToBatch'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { requireSectionAccess } from '@/lib/auth/permissionMatrix'
@@ -40,7 +41,7 @@ export async function addProcessingStep(
   })
   await prisma.sectionCompletionStatus.updateMany({
     where: { batchRecordId: data.batchRecordId, sectionNumber: 6 },
-    data: { status: 'IN_PROGRESS' },
+    data: { status: 'IN_PROGRESS', approvedByUserId: null, approvedAt: null },
   })
   await recordAuditEntry({
     actionType: 'CREATE',
@@ -50,7 +51,61 @@ export async function addProcessingStep(
     batchRecordId: data.batchRecordId,
     newValue: `Step ${data.stepNumber}: ${data.stepDescription}`,
   })
-  redirect(`/batches/${data.batchRecordId}/sections/6`)
+  redirectToBatch(`/batches/${data.batchRecordId}/sections/6`)
+}
+
+const CorrectStepSchema = AddStepSchema.extend({
+  correctsEntryId: z.string().uuid(),
+  correctionReason: z.string().min(1),
+})
+
+export async function correctProcessingStep(
+  _prevState: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const user = await verifySession()
+  if (!user) redirect('/login')
+  const parsed = CorrectStepSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { error: 'Please fill in all required fields, including a reason for the correction.' }
+  const data = parsed.data
+  requireSectionAccess(user.role, 6, 'edit')
+
+  const original = await prisma.processingStep.findUnique({ where: { id: data.correctsEntryId } })
+  if (!original || original.batchRecordId !== data.batchRecordId) {
+    return { error: 'Original entry not found.' }
+  }
+  const alreadySuperseded = await prisma.processingStep.findFirst({ where: { correctsEntryId: original.id } })
+  if (alreadySuperseded) {
+    return { error: 'This entry has already been corrected — correct the newest version instead.' }
+  }
+
+  const step = await prisma.processingStep.create({
+    data: {
+      batchRecordId: data.batchRecordId,
+      stepNumber: original.stepNumber,
+      stepDescription: data.stepDescription,
+      timePerformed: new Date(data.timePerformed),
+      performedByUserId: user.id,
+      observationsNotes: data.observationsNotes || null,
+      correctsEntryId: original.id,
+      correctionReason: data.correctionReason,
+    },
+  })
+  await prisma.sectionCompletionStatus.updateMany({
+    where: { batchRecordId: data.batchRecordId, sectionNumber: 6 },
+    data: { status: 'IN_PROGRESS', approvedByUserId: null, approvedAt: null },
+  })
+  await recordAuditEntry({
+    actionType: 'CORRECT',
+    entityType: 'ProcessingStep',
+    entityId: step.id,
+    userId: user.id,
+    batchRecordId: data.batchRecordId,
+    oldValue: original.id,
+    newValue: `Step ${original.stepNumber}: ${data.stepDescription}`,
+    correctionReason: data.correctionReason,
+  })
+  redirectToBatch(`/batches/${data.batchRecordId}/sections/6`)
 }
 
 // ===== 6.2 Visual Homogeneity Checks (5 fixed items, saved together) =====
@@ -92,7 +147,7 @@ export async function saveHomogeneityChecks(
   )
   await prisma.sectionCompletionStatus.updateMany({
     where: { batchRecordId, sectionNumber: 6 },
-    data: { status: 'IN_PROGRESS' },
+    data: { status: 'IN_PROGRESS', approvedByUserId: null, approvedAt: null },
   })
   await recordAuditEntry({
     actionType: 'EDIT',
@@ -101,7 +156,7 @@ export async function saveHomogeneityChecks(
     userId: user.id,
     batchRecordId,
   })
-  redirect(`/batches/${batchRecordId}/sections/6`)
+  redirectToBatch(`/batches/${batchRecordId}/sections/6`)
 }
 
 // ===== 6.3 / 6.4 Cure Records =====
@@ -159,7 +214,7 @@ export async function saveCureRecord(
   })
   await prisma.sectionCompletionStatus.updateMany({
     where: { batchRecordId: data.batchRecordId, sectionNumber: 6 },
-    data: { status: 'IN_PROGRESS' },
+    data: { status: 'IN_PROGRESS', approvedByUserId: null, approvedAt: null },
   })
   await recordAuditEntry({
     actionType: 'EDIT',
@@ -170,5 +225,5 @@ export async function saveCureRecord(
     fieldName: 'phase',
     newValue: data.phase,
   })
-  redirect(`/batches/${data.batchRecordId}/sections/6`)
+  redirectToBatch(`/batches/${data.batchRecordId}/sections/6`)
 }

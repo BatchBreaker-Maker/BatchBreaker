@@ -2,6 +2,7 @@
 
 import { z } from 'zod'
 import { redirect } from 'next/navigation'
+import { redirectToBatch } from '@/lib/navigation/redirectToBatch'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { requireSectionAccess } from '@/lib/auth/permissionMatrix'
@@ -49,7 +50,7 @@ export async function addSamplingEntry(
   })
   await prisma.sectionCompletionStatus.updateMany({
     where: { batchRecordId: data.batchRecordId, sectionNumber: 9 },
-    data: { status: 'IN_PROGRESS' },
+    data: { status: 'IN_PROGRESS', approvedByUserId: null, approvedAt: null },
   })
   await recordAuditEntry({
     actionType: 'CREATE',
@@ -58,5 +59,65 @@ export async function addSamplingEntry(
     userId: user.id,
     batchRecordId: data.batchRecordId,
   })
-  redirect(`/batches/${data.batchRecordId}/sections/9`)
+  redirectToBatch(`/batches/${data.batchRecordId}/sections/9`)
+}
+
+const CorrectSamplingEntrySchema = AddSamplingEntrySchema.extend({
+  correctsEntryId: z.string().uuid(),
+  correctionReason: z.string().min(1),
+})
+
+export async function correctSamplingEntry(
+  _prevState: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const user = await verifySession()
+  if (!user) redirect('/login')
+  const parsed = CorrectSamplingEntrySchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { error: 'Please fill in all required fields, including a reason for the correction.' }
+  const data = parsed.data
+  requireSectionAccess(user.role, 9, 'edit')
+
+  if (data.disposition === 'DISCARDED' && !data.dispositionReason) {
+    return { error: 'A reason is required when disposition is Discarded.' }
+  }
+
+  const original = await prisma.samplingEntry.findUnique({ where: { id: data.correctsEntryId } })
+  if (!original || original.batchRecordId !== data.batchRecordId) {
+    return { error: 'Original entry not found.' }
+  }
+  const alreadySuperseded = await prisma.samplingEntry.findFirst({ where: { correctsEntryId: original.id } })
+  if (alreadySuperseded) {
+    return { error: 'This entry has already been corrected — correct the newest version instead.' }
+  }
+
+  const entry = await prisma.samplingEntry.create({
+    data: {
+      batchRecordId: data.batchRecordId,
+      dateTime: new Date(data.dateTime),
+      samplingStage: data.samplingStage,
+      testType: data.testType,
+      resultObservation: data.resultObservation || null,
+      actionTaken: data.actionTaken || null,
+      disposition: data.disposition,
+      dispositionReason: data.dispositionReason || null,
+      samplerUserId: user.id,
+      correctsEntryId: original.id,
+      correctionReason: data.correctionReason,
+    },
+  })
+  await prisma.sectionCompletionStatus.updateMany({
+    where: { batchRecordId: data.batchRecordId, sectionNumber: 9 },
+    data: { status: 'IN_PROGRESS', approvedByUserId: null, approvedAt: null },
+  })
+  await recordAuditEntry({
+    actionType: 'CORRECT',
+    entityType: 'SamplingEntry',
+    entityId: entry.id,
+    userId: user.id,
+    batchRecordId: data.batchRecordId,
+    oldValue: original.id,
+    correctionReason: data.correctionReason,
+  })
+  redirectToBatch(`/batches/${data.batchRecordId}/sections/9`)
 }

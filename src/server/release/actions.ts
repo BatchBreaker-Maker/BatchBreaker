@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { redirectToBatch } from '@/lib/navigation/redirectToBatch'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { requireSectionAccess } from '@/lib/auth/permissionMatrix'
@@ -79,7 +80,7 @@ export async function saveReleaseDecision(
     newValue: decision,
   })
 
-  redirect(`/batches/${batchRecordId}/sections/17`)
+  redirectToBatch(`/batches/${batchRecordId}/sections/17`)
 }
 
 const SIGNOFF_ROLES: Role[] = ['PRODUCTION_OPERATOR', 'HEAD_OF_PRODUCTION', 'QUALITY_UNIT']
@@ -164,5 +165,5 @@ export async function signFinalSignOff(
     })
   }
 
-  redirect(`/batches/${batchRecordId}/sections/18`)
+  redirectToBatch(`/batches/${batchRecordId}/sections/18`)
 }

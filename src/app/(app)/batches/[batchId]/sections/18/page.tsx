@@ -1,8 +1,10 @@
 import { notFound, redirect } from 'next/navigation'
+import { CheckCircle2 } from 'lucide-react'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { canAccessSection } from '@/lib/auth/permissionMatrix'
 import type { Role } from '@/generated/prisma/enums'
+import { Card, CardTitle } from '@/components/ui'
 import { SignOffForm } from './SignOffForm'
 
 const SIGNOFF_ROLES: { role: Role; label: string }[] = [
@@ -21,7 +23,7 @@ export default async function Section18Page({
   if (!canAccessSection(user.role, 18, 'view')) {
     return (
       <div className="p-8">
-        <p className="text-sm text-red-600">You do not have permission to view this section.</p>
+        <p className="text-sm text-danger">You do not have permission to view this section.</p>
       </div>
     )
   }
@@ -40,37 +42,40 @@ export default async function Section18Page({
   const fullyProcessed = batch.signOffs.length === SIGNOFF_ROLES.length
 
   return (
-    <div className="flex flex-col gap-6 p-8">
-      <h1 className="text-xl font-semibold">{batch.batchNumber} — Section 18: Final Sign-Off</h1>
+    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+      <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 18: Final Sign-Off</h1>
       {!readyToSign && !fullyProcessed && (
-        <p className="text-sm text-zinc-500">
-          Section 17 must record a release decision before sign-off can begin.
-        </p>
+        <p className="text-sm text-text-muted">Section 17 must record a release decision before sign-off can begin.</p>
       )}
 
-      <ul className="flex flex-col gap-4 max-w-lg">
+      <ul className="flex max-w-lg flex-col gap-3">
         {SIGNOFF_ROLES.map(({ role, label }) => {
           const signOff = batch.signOffs.find((s) => s.role === role)
           const canSignThisSlot = readyToSign && !signOff && user.role === role && canAccessSection(user.role, 18, 'signoff')
           return (
-            <li key={role} className="flex flex-col gap-1 border-b border-zinc-200 pb-3 dark:border-zinc-800">
-              <span className="text-sm font-medium">{label}</span>
-              {signOff ? (
-                <span className="text-sm text-green-700 dark:text-green-500">
-                  Signed by {signOff.user.fullName} on {signOff.signatureDate.toISOString().slice(0, 10)}
-                </span>
-              ) : canSignThisSlot ? (
-                <SignOffForm batchRecordId={batch.id} />
-              ) : (
-                <span className="text-sm text-zinc-500">Not yet signed</span>
-              )}
+            <li key={role}>
+              <Card>
+                <CardTitle>{label}</CardTitle>
+                {signOff ? (
+                  <p className="mt-2 flex items-center gap-2 text-sm text-success">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    Signed by {signOff.user.fullName} on {signOff.signatureDate.toISOString().slice(0, 10)}
+                  </p>
+                ) : canSignThisSlot ? (
+                  <div className="mt-2">
+                    <SignOffForm batchRecordId={batch.id} />
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-text-muted">Not yet signed</p>
+                )}
+              </Card>
             </li>
           )
         })}
       </ul>
 
       {fullyProcessed && (
-        <p className="text-sm font-medium">
+        <p className="text-sm font-medium text-text">
           Batch {batch.status === 'RELEASED' ? 'released' : batch.status.toLowerCase()}.
         </p>
       )}

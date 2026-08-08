@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { redirectToBatch } from '@/lib/navigation/redirectToBatch'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { requireSectionAccess } from '@/lib/auth/permissionMatrix'
@@ -57,7 +58,7 @@ export async function updateCompletenessReview(
     batchRecordId,
   })
 
-  redirect(`/batches/${batchRecordId}/sections/16`)
+  redirectToBatch(`/batches/${batchRecordId}/sections/16`)
 }
 
 export async function signOffCompletenessReview(formData: FormData): Promise<void> {
@@ -103,5 +104,5 @@ export async function signOffCompletenessReview(formData: FormData): Promise<voi
     newValue: 'PENDING_QC_REVIEW',
   })
 
-  redirect(`/batches/${batchRecordId}/sections/16`)
+  redirectToBatch(`/batches/${batchRecordId}/sections/16`)
 }

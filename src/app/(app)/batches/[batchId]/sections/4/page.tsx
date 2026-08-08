@@ -2,7 +2,9 @@ import { notFound, redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { canAccessSection } from '@/lib/auth/permissionMatrix'
+import { ApproveSectionControl } from '@/components/workflow/ApproveSectionControl'
 import { RawMaterialForm } from './RawMaterialForm'
+import { RawMaterialLogTable } from './RawMaterialLogTable'
 
 export default async function Section4Page({
   params,
@@ -14,7 +16,7 @@ export default async function Section4Page({
   if (!canAccessSection(user.role, 4, 'view')) {
     return (
       <div className="p-8">
-        <p className="text-sm text-red-600">You do not have permission to view this section.</p>
+        <p className="text-sm text-danger">You do not have permission to view this section.</p>
       </div>
     )
   }
@@ -23,51 +25,44 @@ export default async function Section4Page({
   const batch = await prisma.batchRecord.findUnique({ where: { id: batchId } })
   if (!batch) notFound()
 
-  const entries = await prisma.rawMaterialEntry.findMany({
-    where: { batchRecordId: batchId },
-    orderBy: { lineNumber: 'asc' },
-  })
+  const [entries, sectionStatus] = await Promise.all([
+    prisma.rawMaterialEntry.findMany({
+      where: { batchRecordId: batchId },
+      orderBy: { lineNumber: 'asc' },
+      include: { correctedByEntries: { select: { id: true } } },
+    }),
+    prisma.sectionCompletionStatus.findUnique({
+      where: { batchRecordId_sectionNumber: { batchRecordId: batchId, sectionNumber: 4 } },
+      include: { approvedByUser: { select: { fullName: true } } },
+    }),
+  ])
   const canEdit = canAccessSection(user.role, 4, 'edit')
+  const canApprove = canAccessSection(user.role, 4, 'signoff')
+
+  // Prisma's Decimal is a class instance, not a plain object — it can't
+  // cross the Server -> Client Component boundary as a prop, so convert to
+  // string here rather than at display time inside the client table.
+  const serializedEntries = entries.map((e) => ({
+    ...e,
+    qtyDispensed: e.qtyDispensed.toString(),
+  }))
 
   return (
-    <div className="flex flex-col gap-6 p-8">
-      <h1 className="text-xl font-semibold">{batch.batchNumber} — Section 4: Raw Material Log</h1>
-
-      <div className="overflow-x-auto max-w-4xl">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-zinc-300 text-left dark:border-zinc-700">
-              <th className="py-2 pr-3">#</th>
-              <th className="py-2 pr-3">Trade Name / Description</th>
-              <th className="py-2 pr-3">Part Code</th>
-              <th className="py-2 pr-3">Supplier</th>
-              <th className="py-2 pr-3">Lot #</th>
-              <th className="py-2 pr-3">Qty</th>
-              <th className="py-2 pr-3">COA</th>
-              <th className="py-2 pr-3">Qual. Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((e) => (
-              <tr key={e.id} className="border-b border-zinc-100 dark:border-zinc-900">
-                <td className="py-2 pr-3">{e.lineNumber}</td>
-                <td className="py-2 pr-3">{e.tradeNameDescription}</td>
-                <td className="py-2 pr-3">{e.internalPartCode || '—'}</td>
-                <td className="py-2 pr-3">{e.supplierName}</td>
-                <td className="py-2 pr-3">{e.supplierLotBatchNumber}</td>
-                <td className="py-2 pr-3">{e.qtyDispensed.toString()} {e.unit}</td>
-                <td className="py-2 pr-3">{e.coaReceived ? 'Y' : 'N'}</td>
-                <td className="py-2 pr-3">
-                  <span className={e.supplierQualStatus !== 'APPROVED' ? 'font-medium text-amber-700 dark:text-amber-500' : ''}>
-                    {e.supplierQualStatus}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {entries.length === 0 && <p className="text-sm text-zinc-500">No raw material entries yet.</p>}
+    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 4: Raw Material Log</h1>
+        {canApprove && (
+          <ApproveSectionControl
+            batchRecordId={batchId}
+            sectionNumber={4}
+            hasEntries={entries.length > 0}
+            approvedByName={sectionStatus?.approvedByUser?.fullName ?? null}
+            approvedAt={sectionStatus?.approvedAt ?? null}
+          />
+        )}
       </div>
+
+      <RawMaterialLogTable entries={serializedEntries} batchRecordId={batchId} canCorrect={canEdit} />
 
       {canEdit && <RawMaterialForm batchRecordId={batchId} />}
     </div>

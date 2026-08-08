@@ -23,12 +23,18 @@ export const SECTION_ACCESS: Record<number, Record<MatrixRole, AccessLevel>> = {
   // Sections 5,6,7,8,9,12,13: spec §2.2 gives HoP plain "View" here, but the
   // user asked (2026-08-07 UI/UX pass) that HoP have every capability a
   // Production Operator has "in addition to other functions... since HoP is
-  // often the main operator" — bumped to 'edit' to match Operator's level.
-  5: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'edit', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  6: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'edit', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  7: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'edit', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  8: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'edit', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  9: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'edit', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  // often the main operator" — bumped to at least 'edit' to match Operator's
+  // level.
+  // Sections 4-9 are open-ended logs with no natural "complete" state (see
+  // Phase 4 plan's approval/correction mechanism) — HoP additionally gets
+  // 'signoff' on 5,6,7,8,9 so they can approve the log once it's accurate,
+  // matching section 4's HoP='signoff' which was already set up for exactly
+  // this but never wired to an action until Phase 4.
+  5: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  6: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  7: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  8: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  9: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
   10: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
   11: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
   12: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'edit', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },

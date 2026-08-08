@@ -2,6 +2,7 @@
 
 import { z } from 'zod'
 import { redirect } from 'next/navigation'
+import { redirectToBatch } from '@/lib/navigation/redirectToBatch'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { requireSectionAccess } from '@/lib/auth/permissionMatrix'
@@ -65,7 +66,7 @@ export async function saveRetainedSampleRecord(
     userId: user.id,
     batchRecordId: data.batchRecordId,
   })
-  redirect(`/batches/${data.batchRecordId}/sections/12`)
+  redirectToBatch(`/batches/${data.batchRecordId}/sections/12`)
 }
 
 export async function authorizeSampleDestruction(formData: FormData): Promise<void> {
@@ -86,5 +87,5 @@ export async function authorizeSampleDestruction(formData: FormData): Promise<vo
     batchRecordId,
     fieldName: 'destructionDate',
   })
-  redirect(`/batches/${batchRecordId}/sections/12`)
+  redirectToBatch(`/batches/${batchRecordId}/sections/12`)
 }

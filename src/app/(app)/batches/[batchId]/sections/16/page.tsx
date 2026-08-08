@@ -1,9 +1,11 @@
 import { notFound, redirect } from 'next/navigation'
+import { CheckCircle2, Circle } from 'lucide-react'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { canAccessSection } from '@/lib/auth/permissionMatrix'
 import { signOffCompletenessReview } from '@/server/completenessReview/actions'
 import { COMPLETENESS_ITEM_LABELS, COMPLETENESS_ITEM_ORDER } from '@/lib/workflow/completenessLabels'
+import { Badge, Button } from '@/components/ui'
 import { CompletenessReviewForm } from './CompletenessReviewForm'
 
 export default async function Section16Page({
@@ -16,7 +18,7 @@ export default async function Section16Page({
   if (!canAccessSection(user.role, 16, 'view')) {
     return (
       <div className="p-8">
-        <p className="text-sm text-red-600">You do not have permission to view this section.</p>
+        <p className="text-sm text-danger">You do not have permission to view this section.</p>
       </div>
     )
   }
@@ -41,11 +43,13 @@ export default async function Section16Page({
   const canSignoff = canAccessSection(user.role, 16, 'signoff')
 
   return (
-    <div className="flex flex-col gap-6 p-8">
-      <h1 className="text-xl font-semibold">{batch.batchNumber} — Section 16: Batch Record Completeness Review</h1>
+    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+      <h1 className="text-xl font-semibold text-text">
+        {batch.batchNumber} — Section 16: Batch Record Completeness Review
+      </h1>
 
       {signedOff && signoffUser && (
-        <p className="text-sm text-green-700 dark:text-green-500">
+        <p className="text-sm text-success">
           Signed off by {signoffUser.fullName} on{' '}
           {items.find((i) => i.hopSignatureDate)?.hopSignatureDate?.toISOString().slice(0, 10)}
         </p>
@@ -54,10 +58,18 @@ export default async function Section16Page({
       {canEdit ? (
         <CompletenessReviewForm batchRecordId={batchId} verifiedItems={verifiedItems} naItems={naItems} />
       ) : (
-        <ul className="flex flex-col gap-2 text-sm max-w-2xl">
+        <ul className="flex max-w-2xl flex-col gap-1 text-sm">
           {COMPLETENESS_ITEM_ORDER.map((key) => (
-            <li key={key} className="flex items-center gap-2">
-              <span>{verifiedItems.has(key) ? '✅' : naItems.has(key) ? 'N/A' : '⬜'}</span>
+            <li key={key} className="flex min-h-11 items-center gap-3 px-2 py-1.5 text-text">
+              <span className="flex w-10 shrink-0 items-center">
+                {verifiedItems.has(key) ? (
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                ) : naItems.has(key) ? (
+                  <Badge status="neutral">N/A</Badge>
+                ) : (
+                  <Circle className="h-4 w-4 text-text-muted" />
+                )}
+              </span>
               <span>{COMPLETENESS_ITEM_LABELS[key]}</span>
             </li>
           ))}
@@ -67,14 +79,14 @@ export default async function Section16Page({
       {canSignoff && !signedOff && (
         <form action={signOffCompletenessReview}>
           <input type="hidden" name="batchRecordId" value={batchId} />
-          <button
+          <Button
             type="submit"
+            variant="secondary"
             disabled={!allAddressed}
-            className="rounded border px-4 py-2 text-sm font-medium disabled:opacity-50"
             title={allAddressed ? undefined : 'All items must be verified or marked N/A first'}
           >
             Sign off Section 16 and submit for QC review
-          </button>
+          </Button>
         </form>
       )}
     </div>

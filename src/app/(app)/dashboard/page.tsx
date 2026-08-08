@@ -4,9 +4,22 @@ import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { canAccessSection } from '@/lib/auth/permissionMatrix'
 import { destructionLookaheadCutoff } from '@/lib/retainedSample/destructionWindow'
+import { Badge, buttonClassName, Card, CardTitle } from '@/components/ui'
+import type { BadgeStatus } from '@/components/ui/Badge'
 
 const NOTIFIED_ROLES = ['HEAD_OF_PRODUCTION', 'QUALITY_UNIT']
 const DESTRUCTION_LOOKAHEAD_DAYS = 30
+
+const BATCH_STATUS_BADGE: Record<string, BadgeStatus> = {
+  DRAFT: 'neutral',
+  IN_PROGRESS: 'warning',
+  PENDING_HOP_REVIEW: 'warning',
+  PENDING_QC_REVIEW: 'warning',
+  RELEASED: 'success',
+  REJECTED: 'danger',
+  QUARANTINED: 'danger',
+  ON_HOLD: 'neutral',
+}
 
 export default async function DashboardPage() {
   const user = await verifySession()
@@ -40,70 +53,76 @@ export default async function DashboardPage() {
     : [[], []]
 
   return (
-    <div className="flex flex-col gap-6 p-8">
-      <h1 className="text-xl font-semibold">Welcome, {user.fullName}</h1>
-
-      {canCreateBatch && (
-        <Link
-          href="/batches/new"
-          className="self-start rounded bg-foreground px-4 py-2 text-sm font-medium text-background"
-        >
-          + New batch record
-        </Link>
-      )}
+    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-xl font-semibold text-text">Welcome, {user.fullName}</h1>
+        {canCreateBatch && (
+          <Link href="/batches/new" className={buttonClassName('primary')}>
+            + New batch record
+          </Link>
+        )}
+      </div>
 
       {showNotifications && (openCriticalDeviations.length > 0 || samplesApproachingDestruction.length > 0) && (
         <section className="flex flex-col gap-4">
           {openCriticalDeviations.length > 0 && (
-            <div className="flex flex-col gap-2 rounded border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
-              <h2 className="font-medium text-red-800 dark:text-red-400">
-                Open critical deviations ({openCriticalDeviations.length})
-              </h2>
-              <ul className="flex flex-col divide-y divide-red-200 dark:divide-red-900">
+            <Card className="border-danger/30 bg-danger/5">
+              <CardTitle className="text-danger">Open critical deviations ({openCriticalDeviations.length})</CardTitle>
+              <ul className="mt-2 flex flex-col divide-y divide-border">
                 {openCriticalDeviations.map((d) => (
-                  <li key={d.id} className="flex items-center justify-between py-1.5 text-sm">
-                    <Link href={`/batches/${d.batchRecordId}/sections/14`} prefetch={false} className="hover:underline">
+                  <li key={d.id} className="flex items-center justify-between gap-4 py-2 text-sm">
+                    <Link
+                      href={`/batches/${d.batchRecordId}/sections/14`}
+                      prefetch={false}
+                      className="min-w-0 truncate hover:underline"
+                    >
                       {d.batchRecord.batchNumber} — {d.description.slice(0, 80)}
                     </Link>
-                    <span className="text-xs text-zinc-500">{d.dateTime.toISOString().slice(0, 10)}</span>
+                    <span className="shrink-0 text-xs text-text-muted">{d.dateTime.toISOString().slice(0, 10)}</span>
                   </li>
                 ))}
               </ul>
-            </div>
+            </Card>
           )}
 
           {samplesApproachingDestruction.length > 0 && (
-            <div className="flex flex-col gap-2 rounded border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
-              <h2 className="font-medium text-amber-800 dark:text-amber-400">
+            <Card className="border-warning/30 bg-warning/5">
+              <CardTitle className="text-warning">
                 Retained samples approaching destruction ({samplesApproachingDestruction.length})
-              </h2>
-              <ul className="flex flex-col divide-y divide-amber-200 dark:divide-amber-900">
+              </CardTitle>
+              <ul className="mt-2 flex flex-col divide-y divide-border">
                 {samplesApproachingDestruction.map((s) => (
-                  <li key={s.id} className="flex items-center justify-between py-1.5 text-sm">
-                    <Link href={`/batches/${s.batchRecordId}/sections/12`} prefetch={false} className="hover:underline">
+                  <li key={s.id} className="flex items-center justify-between gap-4 py-2 text-sm">
+                    <Link
+                      href={`/batches/${s.batchRecordId}/sections/12`}
+                      prefetch={false}
+                      className="min-w-0 truncate hover:underline"
+                    >
                       {s.batchRecord.batchNumber}
                     </Link>
-                    <span className="text-xs text-zinc-500">{s.scheduledDestructionReviewDate.toISOString().slice(0, 10)}</span>
+                    <span className="shrink-0 text-xs text-text-muted">
+                      {s.scheduledDestructionReviewDate.toISOString().slice(0, 10)}
+                    </span>
                   </li>
                 ))}
               </ul>
-            </div>
+            </Card>
           )}
         </section>
       )}
 
       <section className="flex flex-col gap-2">
-        <h2 className="font-medium">Batch records</h2>
+        <h2 className="text-sm font-semibold text-text">Batch records</h2>
         {batches.length === 0 ? (
-          <p className="text-sm text-zinc-500">No batch records yet.</p>
+          <p className="text-sm text-text-muted">No batch records yet.</p>
         ) : (
-          <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800 max-w-2xl">
+          <ul className="flex max-w-2xl flex-col divide-y divide-border">
             {batches.map((b) => (
-              <li key={b.id} className="flex items-center justify-between py-2">
-                <Link href={`/batches/${b.id}`} prefetch={false} className="hover:underline">
+              <li key={b.id} className="flex items-center justify-between gap-4 py-2">
+                <Link href={`/batches/${b.id}`} prefetch={false} className="min-w-0 truncate text-sm hover:underline">
                   {b.batchNumber} — {b.productName}
                 </Link>
-                <span className="text-xs text-zinc-500">{b.status.replaceAll('_', ' ')}</span>
+                <Badge status={BATCH_STATUS_BADGE[b.status] ?? 'neutral'}>{b.status.replaceAll('_', ' ')}</Badge>
               </li>
             ))}
           </ul>

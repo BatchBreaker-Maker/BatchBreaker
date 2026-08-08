@@ -215,6 +215,7 @@ model User {
   completenessInitials                CompletenessReviewItem[]    @relation("CompletenessInitials")
   completenessSignatures              CompletenessReviewItem[]    @relation("CompletenessSignature")
   batchNotes                          BatchNote[]
+  approvedSections                    SectionCompletionStatus[]
 
   @@map("users")
 }
@@ -307,12 +308,19 @@ model BatchRecord {
 // One row per (batch, section) so the workflow engine can query lock/unlock
 // state generically instead of a bespoke status column per section table.
 model SectionCompletionStatus {
-  id            String        @id @default(uuid()) @db.Uuid
-  batchRecordId String        @db.Uuid
-  batchRecord   BatchRecord   @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
-  sectionNumber Int
-  status        SectionStatus @default(NOT_STARTED)
-  updatedAt     DateTime      @updatedAt
+  id               String        @id @default(uuid()) @db.Uuid
+  batchRecordId    String        @db.Uuid
+  batchRecord      BatchRecord   @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  sectionNumber    Int
+  status           SectionStatus @default(NOT_STARTED)
+  // Open-ended log sections (4,5,6,7,8,9) have no field-driven "complete"
+  // state, so HoP/QC sign off explicitly once the log is accurate (Phase 4
+  // approval mechanism). Cleared whenever a new entry or correction lands —
+  // see approveOpenEndedSection / the add*Entry actions for those sections.
+  approvedByUserId String?       @db.Uuid
+  approvedByUser   User?         @relation(fields: [approvedByUserId], references: [id])
+  approvedAt       DateTime?
+  updatedAt        DateTime      @updatedAt
 
   @@unique([batchRecordId, sectionNumber])
   @@map("section_completion_status")
@@ -417,6 +425,14 @@ model RawMaterialEntry {
   hopVerifiedDate         DateTime?
   createdAt               DateTime           @default(now())
 
+  // Corrections are new rows, not edits to history (Phase 4 plan) — a row
+  // with correctsEntryId set replaces the row it points at, which then reads
+  // as superseded (any row pointing at it) rather than being mutated.
+  correctsEntryId    String?            @db.Uuid
+  correctsEntry      RawMaterialEntry?  @relation("RawMaterialEntryCorrection", fields: [correctsEntryId], references: [id])
+  correctedByEntries RawMaterialEntry[] @relation("RawMaterialEntryCorrection")
+  correctionReason   String?
+
   @@index([supplierLotBatchNumber])
   @@map("raw_material_entries")
 }
@@ -437,6 +453,11 @@ model TemperatureEntry {
   operatorUser       User        @relation(fields: [operatorUserId], references: [id])
   createdAt          DateTime    @default(now())
 
+  correctsEntryId    String?            @db.Uuid
+  correctsEntry      TemperatureEntry?  @relation("TemperatureEntryCorrection", fields: [correctsEntryId], references: [id])
+  correctedByEntries TemperatureEntry[] @relation("TemperatureEntryCorrection")
+  correctionReason   String?
+
   @@map("temperature_entries")
 }
 
@@ -452,6 +473,11 @@ model ProcessingStep {
   performedByUser   User        @relation(fields: [performedByUserId], references: [id])
   observationsNotes String?
   createdAt         DateTime    @default(now())
+
+  correctsEntryId    String?          @db.Uuid
+  correctsEntry      ProcessingStep?  @relation("ProcessingStepCorrection", fields: [correctsEntryId], references: [id])
+  correctedByEntries ProcessingStep[] @relation("ProcessingStepCorrection")
+  correctionReason   String?
 
   @@map("processing_steps")
 }
@@ -506,6 +532,11 @@ model CuttingObservation {
   fragranceAdditionalComments String?
   createdAt                   DateTime    @default(now())
 
+  correctsEntryId    String?              @db.Uuid
+  correctsEntry      CuttingObservation?  @relation("CuttingObservationCorrection", fields: [correctsEntryId], references: [id])
+  correctedByEntries CuttingObservation[] @relation("CuttingObservationCorrection")
+  correctionReason   String?
+
   @@map("cutting_observations")
 }
 
@@ -539,6 +570,11 @@ model PressRun {
   operatorUser        User        @relation(fields: [operatorUserId], references: [id])
   createdAt           DateTime    @default(now())
 
+  correctsEntryId    String?    @db.Uuid
+  correctsEntry      PressRun?  @relation("PressRunCorrection", fields: [correctsEntryId], references: [id])
+  correctedByEntries PressRun[] @relation("PressRunCorrection")
+  correctionReason   String?
+
   @@map("press_runs")
 }
 
@@ -557,6 +593,11 @@ model SamplingEntry {
   samplerUserId     String          @db.Uuid
   samplerUser       User            @relation(fields: [samplerUserId], references: [id])
   createdAt         DateTime        @default(now())
+
+  correctsEntryId    String?         @db.Uuid
+  correctsEntry      SamplingEntry?  @relation("SamplingEntryCorrection", fields: [correctsEntryId], references: [id])
+  correctedByEntries SamplingEntry[] @relation("SamplingEntryCorrection")
+  correctionReason   String?
 
   @@map("sampling_entries")
 }

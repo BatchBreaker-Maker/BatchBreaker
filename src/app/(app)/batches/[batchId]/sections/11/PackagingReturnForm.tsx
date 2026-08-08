@@ -4,50 +4,57 @@ import { useActionState } from 'react'
 import { savePackagingReturn } from '@/server/packaging/actions'
 import type { FormActionState } from '@/server/batches/actions'
 import type { PackagingReturnModel } from '@/generated/prisma/models'
+import { Button, Card, Input, Label } from '@/components/ui'
 
 export function PackagingReturnForm({ batchRecordId, existing }: { batchRecordId: string; existing: PackagingReturnModel | null }) {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(savePackagingReturn, undefined)
-  const inputClass = 'rounded border border-zinc-300 px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900'
 
   return (
-    <form action={formAction} className="flex flex-col gap-3 max-w-lg">
-      <input type="hidden" name="batchRecordId" value={batchRecordId} />
+    <Card className="w-full max-w-lg">
+      <form action={formAction} className="flex flex-col gap-3">
+        <input type="hidden" name="batchRecordId" value={batchRecordId} />
 
-      <fieldset className="flex flex-col gap-1">
-        <legend className="text-sm font-medium">Unused packaging returned to store?</legend>
-        {(['YES', 'NO', 'NA'] as const).map((v) => (
-          <label key={v} className="flex items-center gap-2 text-sm">
-            <input type="radio" name="returned" value={v} defaultChecked={existing?.returned === v} required />
-            {v}
-          </label>
-        ))}
-      </fieldset>
+        <fieldset className="flex flex-col gap-1">
+          <legend className="text-sm font-medium text-text">Unused packaging returned to store?</legend>
+          {(['YES', 'NO', 'NA'] as const).map((v) => (
+            <label
+              key={v}
+              className="flex min-h-11 items-center gap-3 rounded-md px-2 text-sm text-text hover:bg-surface-hover"
+            >
+              <input
+                type="radio"
+                name="returned"
+                value={v}
+                defaultChecked={existing?.returned === v}
+                required
+                className="h-4 w-4 shrink-0"
+              />
+              {v}
+            </label>
+          ))}
+        </fieldset>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium" htmlFor="quantitiesReturned">Quantities Returned (describe)</label>
-        <input id="quantitiesReturned" name="quantitiesReturned" defaultValue={existing?.quantitiesReturned ?? ''} className={inputClass} />
-      </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="quantitiesReturned">Quantities Returned (describe)</Label>
+          <Input id="quantitiesReturned" name="quantitiesReturned" defaultValue={existing?.quantitiesReturned ?? ''} />
+        </div>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium" htmlFor="returnedDate">Returned Date</label>
-        <input
-          id="returnedDate"
-          name="returnedDate"
-          type="date"
-          defaultValue={existing?.returnedDate ? existing.returnedDate.toISOString().slice(0, 10) : ''}
-          className={inputClass}
-        />
-      </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="returnedDate">Returned Date</Label>
+          <Input
+            id="returnedDate"
+            name="returnedDate"
+            type="date"
+            defaultValue={existing?.returnedDate ? existing.returnedDate.toISOString().slice(0, 10) : ''}
+          />
+        </div>
 
-      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+        {state?.error && <p className="text-sm text-danger">{state.error}</p>}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="self-start rounded bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
-      >
-        {pending ? 'Saving…' : 'Save'}
-      </button>
-    </form>
+        <Button type="submit" disabled={pending} className="self-start">
+          {pending ? 'Saving…' : 'Save'}
+        </Button>
+      </form>
+    </Card>
   )
 }

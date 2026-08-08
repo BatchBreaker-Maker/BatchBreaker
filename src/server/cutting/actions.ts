@@ -2,6 +2,7 @@
 
 import { z } from 'zod'
 import { redirect } from 'next/navigation'
+import { redirectToBatch } from '@/lib/navigation/redirectToBatch'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { requireSectionAccess } from '@/lib/auth/permissionMatrix'
@@ -46,7 +47,7 @@ export async function addCuttingObservation(
   })
   await prisma.sectionCompletionStatus.updateMany({
     where: { batchRecordId: data.batchRecordId, sectionNumber: 7 },
-    data: { status: 'IN_PROGRESS' },
+    data: { status: 'IN_PROGRESS', approvedByUserId: null, approvedAt: null },
   })
   await recordAuditEntry({
     actionType: 'CREATE',
@@ -56,7 +57,64 @@ export async function addCuttingObservation(
     batchRecordId: data.batchRecordId,
     newValue: `Pour ${data.pourNumber}`,
   })
-  redirect(`/batches/${data.batchRecordId}/sections/7`)
+  redirectToBatch(`/batches/${data.batchRecordId}/sections/7`)
+}
+
+const CorrectCuttingObservationSchema = AddCuttingObservationSchema.extend({
+  correctsEntryId: z.string().uuid(),
+  correctionReason: z.string().min(1),
+})
+
+export async function correctCuttingObservation(
+  _prevState: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const user = await verifySession()
+  if (!user) redirect('/login')
+  const parsed = CorrectCuttingObservationSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { error: 'Please fill in all required fields, including a reason for the correction.' }
+  const data = parsed.data
+  requireSectionAccess(user.role, 7, 'edit')
+
+  const original = await prisma.cuttingObservation.findUnique({ where: { id: data.correctsEntryId } })
+  if (!original || original.batchRecordId !== data.batchRecordId) {
+    return { error: 'Original entry not found.' }
+  }
+  const alreadySuperseded = await prisma.cuttingObservation.findFirst({ where: { correctsEntryId: original.id } })
+  if (alreadySuperseded) {
+    return { error: 'This entry has already been corrected — correct the newest version instead.' }
+  }
+
+  const obs = await prisma.cuttingObservation.create({
+    data: {
+      batchRecordId: data.batchRecordId,
+      pourNumber: original.pourNumber,
+      tempTopF: data.tempTopF ? Number(data.tempTopF) : null,
+      tempSideF: data.tempSideF ? Number(data.tempSideF) : null,
+      tempMiddleF: data.tempMiddleF ? Number(data.tempMiddleF) : null,
+      colorUniformity: data.colorUniformity || null,
+      visibleSeparation: data.visibleSeparation === 'on',
+      foreignMatter: data.foreignMatter === 'on',
+      fragranceAdditionalComments: data.fragranceAdditionalComments || null,
+      correctsEntryId: original.id,
+      correctionReason: data.correctionReason,
+    },
+  })
+  await prisma.sectionCompletionStatus.updateMany({
+    where: { batchRecordId: data.batchRecordId, sectionNumber: 7 },
+    data: { status: 'IN_PROGRESS', approvedByUserId: null, approvedAt: null },
+  })
+  await recordAuditEntry({
+    actionType: 'CORRECT',
+    entityType: 'CuttingObservation',
+    entityId: obs.id,
+    userId: user.id,
+    batchRecordId: data.batchRecordId,
+    oldValue: original.id,
+    newValue: `Pour ${original.pourNumber}`,
+    correctionReason: data.correctionReason,
+  })
+  redirectToBatch(`/batches/${data.batchRecordId}/sections/7`)
 }
 
 export async function saveCuttingOverallComments(formData: FormData): Promise<void> {
@@ -72,7 +130,7 @@ export async function saveCuttingOverallComments(formData: FormData): Promise<vo
   })
   await prisma.sectionCompletionStatus.updateMany({
     where: { batchRecordId, sectionNumber: 7 },
-    data: { status: 'IN_PROGRESS' },
+    data: { status: 'IN_PROGRESS', approvedByUserId: null, approvedAt: null },
   })
   await recordAuditEntry({
     actionType: 'EDIT',
@@ -82,5 +140,5 @@ export async function saveCuttingOverallComments(formData: FormData): Promise<vo
     batchRecordId,
     fieldName: 'cuttingOverallComments',
   })
-  redirect(`/batches/${batchRecordId}/sections/7`)
+  redirectToBatch(`/batches/${batchRecordId}/sections/7`)
 }

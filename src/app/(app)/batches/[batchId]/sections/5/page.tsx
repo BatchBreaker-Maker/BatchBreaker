@@ -2,7 +2,9 @@ import { notFound, redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { canAccessSection } from '@/lib/auth/permissionMatrix'
+import { ApproveSectionControl } from '@/components/workflow/ApproveSectionControl'
 import { TemperatureForm } from './TemperatureForm'
+import { TemperatureLogTable } from './TemperatureLogTable'
 
 export default async function Section5Page({
   params,
@@ -14,7 +16,7 @@ export default async function Section5Page({
   if (!canAccessSection(user.role, 5, 'view')) {
     return (
       <div className="p-8">
-        <p className="text-sm text-red-600">You do not have permission to view this section.</p>
+        <p className="text-sm text-danger">You do not have permission to view this section.</p>
       </div>
     )
   }
@@ -23,47 +25,46 @@ export default async function Section5Page({
   const batch = await prisma.batchRecord.findUnique({ where: { id: batchId } })
   if (!batch) notFound()
 
-  const entries = await prisma.temperatureEntry.findMany({
-    where: { batchRecordId: batchId },
-    orderBy: { lineNumber: 'asc' },
-  })
+  const [entries, sectionStatus] = await Promise.all([
+    prisma.temperatureEntry.findMany({
+      where: { batchRecordId: batchId },
+      orderBy: { lineNumber: 'asc' },
+      include: { correctedByEntries: { select: { id: true } } },
+    }),
+    prisma.sectionCompletionStatus.findUnique({
+      where: { batchRecordId_sectionNumber: { batchRecordId: batchId, sectionNumber: 5 } },
+      include: { approvedByUser: { select: { fullName: true } } },
+    }),
+  ])
   const canEdit = canAccessSection(user.role, 5, 'edit')
+  const canApprove = canAccessSection(user.role, 5, 'signoff')
+
+  // Prisma's Decimal is a class instance, not a plain object — it can't
+  // cross the Server -> Client Component boundary as a prop, so convert to
+  // string here rather than at display time inside the client table.
+  const serializedEntries = entries.map((e) => ({
+    ...e,
+    acceptableTempMinF: e.acceptableTempMinF.toString(),
+    acceptableTempMaxF: e.acceptableTempMaxF.toString(),
+    actualTempF: e.actualTempF.toString(),
+  }))
 
   return (
-    <div className="flex flex-col gap-6 p-8">
-      <h1 className="text-xl font-semibold">{batch.batchNumber} — Section 5: Raw Material Temperatures</h1>
-
-      <div className="overflow-x-auto max-w-3xl">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-zinc-300 text-left dark:border-zinc-700">
-              <th className="py-2 pr-3">#</th>
-              <th className="py-2 pr-3">Material</th>
-              <th className="py-2 pr-3">Acceptable Range</th>
-              <th className="py-2 pr-3">Actual</th>
-              <th className="py-2 pr-3">Within Range?</th>
-              <th className="py-2 pr-3">Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((e) => (
-              <tr key={e.id} className="border-b border-zinc-100 dark:border-zinc-900">
-                <td className="py-2 pr-3">{e.lineNumber}</td>
-                <td className="py-2 pr-3">{e.materialIngredient}</td>
-                <td className="py-2 pr-3">{e.acceptableTempMinF.toString()}–{e.acceptableTempMaxF.toString()}°F</td>
-                <td className="py-2 pr-3">{e.actualTempF.toString()}°F</td>
-                <td className="py-2 pr-3">
-                  <span className={!e.withinRange ? 'font-medium text-red-600' : ''}>
-                    {e.withinRange ? 'Yes' : 'OUT OF RANGE'}
-                  </span>
-                </td>
-                <td className="py-2 pr-3">{e.timeOfAddition.toISOString().slice(0, 16).replace('T', ' ')}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {entries.length === 0 && <p className="text-sm text-zinc-500">No temperature entries yet.</p>}
+    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 5: Raw Material Temperatures</h1>
+        {canApprove && (
+          <ApproveSectionControl
+            batchRecordId={batchId}
+            sectionNumber={5}
+            hasEntries={entries.length > 0}
+            approvedByName={sectionStatus?.approvedByUser?.fullName ?? null}
+            approvedAt={sectionStatus?.approvedAt ?? null}
+          />
+        )}
       </div>
+
+      <TemperatureLogTable entries={serializedEntries} batchRecordId={batchId} canCorrect={canEdit} />
 
       {canEdit && <TemperatureForm batchRecordId={batchId} />}
     </div>

@@ -4,6 +4,7 @@ import { verifySession } from '@/lib/auth/session'
 import { canAccessSection } from '@/lib/auth/permissionMatrix'
 import { RetainedSampleForm } from './RetainedSampleForm'
 import { authorizeSampleDestruction } from '@/server/retainedSample/actions'
+import { Button, Card, CardTitle } from '@/components/ui'
 
 export default async function Section12Page({
   params,
@@ -15,7 +16,7 @@ export default async function Section12Page({
   if (!canAccessSection(user.role, 12, 'view')) {
     return (
       <div className="p-8">
-        <p className="text-sm text-red-600">You do not have permission to view this section.</p>
+        <p className="text-sm text-danger">You do not have permission to view this section.</p>
       </div>
     )
   }
@@ -28,43 +29,40 @@ export default async function Section12Page({
   const canEdit = canAccessSection(user.role, 12, 'edit')
 
   return (
-    <div className="flex flex-col gap-8 p-8">
-      <h1 className="text-xl font-semibold">{batch.batchNumber} — Section 12: Retained Sample</h1>
+    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
+      <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 12: Retained Sample</h1>
 
-      <section className="flex flex-col gap-3 max-w-lg">
+      <section className="flex max-w-lg flex-col gap-3">
         {canEdit ? (
           <RetainedSampleForm batchRecordId={batchId} existing={record} />
         ) : (
-          <p className="text-sm text-zinc-500">No retained sample record yet.</p>
+          <p className="text-sm text-text-muted">No retained sample record yet.</p>
         )}
       </section>
 
       {record && (
-        <section className="flex flex-col gap-3 max-w-lg border-t border-zinc-200 pt-6 dark:border-zinc-800">
-          <h2 className="font-medium">Sample Destruction</h2>
+        <Card className={record.destructionDate ? 'w-full max-w-lg' : 'w-full max-w-lg border-warning/30 bg-warning/5'}>
+          <CardTitle className={record.destructionDate ? undefined : 'text-warning'}>Sample Destruction</CardTitle>
           {record.destructionDate ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            <p className="mt-2 text-sm text-text-muted">
               Destruction authorized on {record.destructionDate.toISOString().slice(0, 10)}.
             </p>
           ) : (
             <>
-              <p className="text-sm text-zinc-500">
+              <p className="mt-2 text-sm text-text-muted">
                 Scheduled review/destruction date: {record.scheduledDestructionReviewDate.toISOString().slice(0, 10)}.
               </p>
               {canEdit && (
-                <form action={authorizeSampleDestruction}>
+                <form action={authorizeSampleDestruction} className="mt-3">
                   <input type="hidden" name="batchRecordId" value={batchId} />
-                  <button
-                    type="submit"
-                    className="self-start rounded border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
-                  >
+                  <Button type="submit" variant="destructive">
                     Authorize destruction
-                  </button>
+                  </Button>
                 </form>
               )}
             </>
           )}
-        </section>
+        </Card>
       )}
     </div>
   )

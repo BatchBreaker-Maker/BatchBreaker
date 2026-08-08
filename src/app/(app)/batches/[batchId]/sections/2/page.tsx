@@ -14,7 +14,7 @@ export default async function Section2Page({
   if (!canAccessSection(user.role, 2, 'view')) {
     return (
       <div className="p-8">
-        <p className="text-sm text-red-600">You do not have permission to view this section.</p>
+        <p className="text-sm text-danger">You do not have permission to view this section.</p>
       </div>
     )
   }
@@ -30,10 +30,8 @@ export default async function Section2Page({
   const productionOperatorNames = batch.productionOperatorNames ?? []
 
   return (
-    <div className="flex flex-col gap-6 p-8">
-      <div>
-        <h1 className="text-xl font-semibold">{batch.batchNumber} — Section 2: Production Personnel</h1>
-      </div>
+    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+      <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 2: Production Personnel</h1>
       {canEdit ? (
         <PersonnelForm
           batchRecordId={batch.id}
@@ -44,13 +42,13 @@ export default async function Section2Page({
           }}
         />
       ) : (
-        <dl className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm max-w-md">
-          <dt className="text-zinc-500">Production Operator(s)</dt>
-          <dd>{productionOperatorNames.length > 0 ? productionOperatorNames.join(', ') : '—'}</dd>
-          <dt className="text-zinc-500">Head of Production</dt>
-          <dd>{batch.headOfProductionName ?? '—'}</dd>
-          <dt className="text-zinc-500">QC Reviewer</dt>
-          <dd>{batch.qcReviewerName ?? '—'}</dd>
+        <dl className="grid max-w-md grid-cols-2 gap-x-8 gap-y-2 text-sm">
+          <dt className="text-text-muted">Production Operator(s)</dt>
+          <dd className="text-text">{productionOperatorNames.length > 0 ? productionOperatorNames.join(', ') : '—'}</dd>
+          <dt className="text-text-muted">Head of Production</dt>
+          <dd className="text-text">{batch.headOfProductionName ?? '—'}</dd>
+          <dt className="text-text-muted">QC Reviewer</dt>
+          <dd className="text-text">{batch.qcReviewerName ?? '—'}</dd>
         </dl>
       )}
     </div>

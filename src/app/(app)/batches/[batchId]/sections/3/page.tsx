@@ -1,9 +1,11 @@
 import { notFound, redirect } from 'next/navigation'
+import { CheckCircle2, Circle } from 'lucide-react'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { canAccessSection } from '@/lib/auth/permissionMatrix'
 import { signOffChecklist } from '@/server/checklist/actions'
 import { CHECKLIST_ITEM_LABELS, CHECKLIST_ITEM_ORDER } from '@/lib/workflow/checklistItems'
+import { Button } from '@/components/ui'
 import { ChecklistForm } from './ChecklistForm'
 
 export default async function Section3Page({
@@ -16,7 +18,7 @@ export default async function Section3Page({
   if (!canAccessSection(user.role, 3, 'view')) {
     return (
       <div className="p-8">
-        <p className="text-sm text-red-600">You do not have permission to view this section.</p>
+        <p className="text-sm text-danger">You do not have permission to view this section.</p>
       </div>
     )
   }
@@ -38,11 +40,11 @@ export default async function Section3Page({
   const canSignoff = canAccessSection(user.role, 3, 'signoff')
 
   return (
-    <div className="flex flex-col gap-6 p-8">
-      <h1 className="text-xl font-semibold">{batch.batchNumber} — Section 3: Pre-Production Checklist</h1>
+    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+      <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 3: Pre-Production Checklist</h1>
 
       {signedOff && signoffUser && (
-        <p className="text-sm text-green-700 dark:text-green-500">
+        <p className="text-sm text-success">
           Signed off by {signoffUser.fullName} on{' '}
           {items.find((i) => i.hopSignoffDate)?.hopSignoffDate?.toISOString().slice(0, 10)}
         </p>
@@ -51,10 +53,14 @@ export default async function Section3Page({
       {canEdit ? (
         <ChecklistForm batchRecordId={batchId} verifiedItems={verifiedItems} />
       ) : (
-        <ul className="flex flex-col gap-2 text-sm max-w-2xl">
+        <ul className="flex max-w-2xl flex-col gap-1 text-sm">
           {CHECKLIST_ITEM_ORDER.map((key) => (
-            <li key={key} className="flex items-center gap-2">
-              <span>{verifiedItems.has(key) ? '✅' : '⬜'}</span>
+            <li key={key} className="flex items-center gap-3 px-2 py-1.5 text-text">
+              {verifiedItems.has(key) ? (
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
+              ) : (
+                <Circle className="h-4 w-4 shrink-0 text-text-muted" />
+              )}
               <span>{CHECKLIST_ITEM_LABELS[key]}</span>
             </li>
           ))}
@@ -64,14 +70,14 @@ export default async function Section3Page({
       {canSignoff && !signedOff && (
         <form action={signOffChecklist}>
           <input type="hidden" name="batchRecordId" value={batchId} />
-          <button
+          <Button
             type="submit"
+            variant="secondary"
             disabled={!allVerified}
-            className="rounded border px-4 py-2 text-sm font-medium disabled:opacity-50"
             title={allVerified ? undefined : 'All items must be verified first'}
           >
             Sign off Section 3 as Head of Production
-          </button>
+          </Button>
         </form>
       )}
     </div>

@@ -2,6 +2,7 @@
 
 import { z } from 'zod'
 import { redirect } from 'next/navigation'
+import { redirectToBatch } from '@/lib/navigation/redirectToBatch'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { requireSectionAccess } from '@/lib/auth/permissionMatrix'
@@ -50,7 +51,7 @@ export async function saveStampingSetup(
   })
   await prisma.sectionCompletionStatus.updateMany({
     where: { batchRecordId: data.batchRecordId, sectionNumber: 8 },
-    data: { status: 'IN_PROGRESS' },
+    data: { status: 'IN_PROGRESS', approvedByUserId: null, approvedAt: null },
   })
   await recordAuditEntry({
     actionType: 'EDIT',
@@ -59,7 +60,7 @@ export async function saveStampingSetup(
     userId: user.id,
     batchRecordId: data.batchRecordId,
   })
-  redirect(`/batches/${data.batchRecordId}/sections/8`)
+  redirectToBatch(`/batches/${data.batchRecordId}/sections/8`)
 }
 
 const AddPressRunSchema = z.object({
@@ -95,7 +96,7 @@ export async function addPressRun(
   })
   await prisma.sectionCompletionStatus.updateMany({
     where: { batchRecordId: data.batchRecordId, sectionNumber: 8 },
-    data: { status: 'IN_PROGRESS' },
+    data: { status: 'IN_PROGRESS', approvedByUserId: null, approvedAt: null },
   })
   await recordAuditEntry({
     actionType: 'CREATE',
@@ -104,5 +105,59 @@ export async function addPressRun(
     userId: user.id,
     batchRecordId: data.batchRecordId,
   })
-  redirect(`/batches/${data.batchRecordId}/sections/8`)
+  redirectToBatch(`/batches/${data.batchRecordId}/sections/8`)
+}
+
+const CorrectPressRunSchema = AddPressRunSchema.extend({
+  correctsEntryId: z.string().uuid(),
+  correctionReason: z.string().min(1),
+})
+
+export async function correctPressRun(
+  _prevState: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const user = await verifySession()
+  if (!user) redirect('/login')
+  const parsed = CorrectPressRunSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { error: 'Please fill in all required fields, including a reason for the correction.' }
+  const data = parsed.data
+  requireSectionAccess(user.role, 8, 'edit')
+
+  const original = await prisma.pressRun.findUnique({ where: { id: data.correctsEntryId } })
+  if (!original || original.batchRecordId !== data.batchRecordId) {
+    return { error: 'Original entry not found.' }
+  }
+  const alreadySuperseded = await prisma.pressRun.findFirst({ where: { correctsEntryId: original.id } })
+  if (alreadySuperseded) {
+    return { error: 'This entry has already been corrected — correct the newest version instead.' }
+  }
+
+  const run = await prisma.pressRun.create({
+    data: {
+      batchRecordId: data.batchRecordId,
+      dateTime: new Date(data.dateTime),
+      dieStampId: data.dieStampId,
+      impressionQuality: data.impressionQuality || null,
+      barSurfaceCondition: data.barSurfaceCondition || null,
+      appearanceOk: data.appearanceOk === 'on',
+      operatorUserId: user.id,
+      correctsEntryId: original.id,
+      correctionReason: data.correctionReason,
+    },
+  })
+  await prisma.sectionCompletionStatus.updateMany({
+    where: { batchRecordId: data.batchRecordId, sectionNumber: 8 },
+    data: { status: 'IN_PROGRESS', approvedByUserId: null, approvedAt: null },
+  })
+  await recordAuditEntry({
+    actionType: 'CORRECT',
+    entityType: 'PressRun',
+    entityId: run.id,
+    userId: user.id,
+    batchRecordId: data.batchRecordId,
+    oldValue: original.id,
+    correctionReason: data.correctionReason,
+  })
+  redirectToBatch(`/batches/${data.batchRecordId}/sections/8`)
 }

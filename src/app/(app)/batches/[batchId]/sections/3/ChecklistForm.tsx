@@ -5,6 +5,7 @@ import { updateChecklist } from '@/server/checklist/actions'
 import type { FormActionState } from '@/server/batches/actions'
 import { CHECKLIST_ITEM_LABELS, CHECKLIST_ITEM_ORDER } from '@/lib/workflow/checklistItems'
 import type { ChecklistItemKey } from '@/generated/prisma/enums'
+import { Button } from '@/components/ui'
 
 export function ChecklistForm({
   batchRecordId,
@@ -16,29 +17,23 @@ export function ChecklistForm({
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(updateChecklist, undefined)
 
   return (
-    <form action={formAction} className="flex flex-col gap-3 w-full max-w-2xl">
+    <form action={formAction} className="flex w-full max-w-2xl flex-col gap-1">
       <input type="hidden" name="batchRecordId" value={batchRecordId} />
       {CHECKLIST_ITEM_ORDER.map((key) => (
-        <label key={key} className="flex items-start gap-3 text-sm">
-          <input
-            type="checkbox"
-            name={key}
-            defaultChecked={verifiedItems.has(key)}
-            className="mt-1 h-4 w-4"
-          />
+        <label
+          key={key}
+          className="flex min-h-11 items-center gap-3 rounded-md px-2 text-sm text-text hover:bg-surface-hover"
+        >
+          <input type="checkbox" name={key} defaultChecked={verifiedItems.has(key)} className="h-4 w-4 shrink-0" />
           <span>{CHECKLIST_ITEM_LABELS[key]}</span>
         </label>
       ))}
 
-      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state?.error && <p className="text-sm text-danger">{state.error}</p>}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="self-start rounded bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
-      >
+      <Button type="submit" disabled={pending} className="mt-2 self-start">
         {pending ? 'Saving…' : 'Save checklist'}
-      </button>
+      </Button>
     </form>
   )
 }

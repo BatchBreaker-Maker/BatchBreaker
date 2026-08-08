@@ -2,6 +2,7 @@
 
 import { z } from 'zod'
 import { redirect } from 'next/navigation'
+import { redirectToBatch } from '@/lib/navigation/redirectToBatch'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { requireSectionAccess } from '@/lib/auth/permissionMatrix'
@@ -53,7 +54,7 @@ export async function savePrePackagingChecklist(
     userId: user.id,
     batchRecordId,
   })
-  redirect(`/batches/${batchRecordId}/sections/11`)
+  redirectToBatch(`/batches/${batchRecordId}/sections/11`)
 }
 
 // ===== 11.2 In-Process Packaging Checks =====
@@ -102,7 +103,7 @@ export async function addPackagingCheck(
     userId: user.id,
     batchRecordId: data.batchRecordId,
   })
-  redirect(`/batches/${data.batchRecordId}/sections/11`)
+  redirectToBatch(`/batches/${data.batchRecordId}/sections/11`)
 }
 
 // ===== 11.3 Unused Packaging Return =====
@@ -151,5 +152,5 @@ export async function savePackagingReturn(
     userId: user.id,
     batchRecordId: data.batchRecordId,
   })
-  redirect(`/batches/${data.batchRecordId}/sections/11`)
+  redirectToBatch(`/batches/${data.batchRecordId}/sections/11`)
 }

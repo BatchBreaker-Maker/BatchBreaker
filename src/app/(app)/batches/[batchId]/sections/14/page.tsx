@@ -5,11 +5,25 @@ import { canAccessSection } from '@/lib/auth/permissionMatrix'
 import { DeviationEntryForm } from './DeviationEntryForm'
 import { ResolveDeviationForm } from './ResolveDeviationForm'
 import { confirmNoDeviations } from '@/server/deviations/actions'
+import { Badge, Button, TBody, TD, TH, THead, TR, Table } from '@/components/ui'
+import type { BadgeStatus } from '@/components/ui/Badge'
 
 const TYPE_LABELS: Record<string, string> = {
   INCIDENT: 'Incident',
   DEVIATION: 'Deviation',
   CRITICAL_DEVIATION: 'Critical Deviation',
+}
+
+const STATUS_BADGE: Record<string, BadgeStatus> = {
+  OPEN: 'danger',
+  RESOLVED: 'warning',
+  CLOSED: 'success',
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  OPEN: 'Open',
+  RESOLVED: 'Resolved',
+  CLOSED: 'Closed',
 }
 
 export default async function Section14Page({
@@ -22,7 +36,7 @@ export default async function Section14Page({
   if (!canAccessSection(user.role, 14, 'view')) {
     return (
       <div className="p-8">
-        <p className="text-sm text-red-600">You do not have permission to view this section.</p>
+        <p className="text-sm text-danger">You do not have permission to view this section.</p>
       </div>
     )
   }
@@ -48,58 +62,57 @@ export default async function Section14Page({
   const noDeviationsConfirmed = Boolean(batch.noDeviationsConfirmedDate)
 
   return (
-    <div className="flex flex-col gap-8 p-8">
-      <h1 className="text-xl font-semibold">{batch.batchNumber} — Section 14: Deviations &amp; Incidents</h1>
+    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+      <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 14: Deviations &amp; Incidents</h1>
 
       {noDeviationsConfirmed && (
-        <p className="text-sm text-green-700 dark:text-green-500">
+        <p className="text-sm text-success">
           No deviations confirmed by {batch.noDeviationsConfirmedByUser?.fullName} on{' '}
           {batch.noDeviationsConfirmedDate!.toISOString().slice(0, 10)}.
         </p>
       )}
 
-      <section className="flex flex-col gap-3">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-zinc-300 text-left dark:border-zinc-700">
-                <th className="py-2 pr-3">#</th>
-                <th className="py-2 pr-3">Date/Time</th>
-                <th className="py-2 pr-3">Type</th>
-                <th className="py-2 pr-3">Description</th>
-                <th className="py-2 pr-3">Corrective Action</th>
-                <th className="py-2 pr-3">Reported To</th>
-                <th className="py-2 pr-3">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((e) => (
-                <tr key={e.id} className="border-b border-zinc-100 align-top dark:border-zinc-900">
-                  <td className="py-2 pr-3">{e.sequenceNumber}</td>
-                  <td className="py-2 pr-3">{e.dateTime.toISOString().slice(0, 16).replace('T', ' ')}</td>
-                  <td className="py-2 pr-3">{TYPE_LABELS[e.type]}</td>
-                  <td className="py-2 pr-3 max-w-xs whitespace-pre-wrap">{e.description}</td>
-                  <td className="py-2 pr-3 max-w-xs whitespace-pre-wrap">{e.correctiveActionTaken}</td>
-                  <td className="py-2 pr-3">{e.reportedToUser?.fullName ?? '—'}</td>
-                  <td className="py-2 pr-3">
-                    {e.status === 'OPEN' ? (
-                      <span className="font-medium text-red-600">Open</span>
-                    ) : (
-                      <span className="text-green-700 dark:text-green-500">
-                        {e.status === 'RESOLVED' ? 'Resolved' : 'Closed'} by {e.resolvedByUser?.fullName}
+      <section className="flex flex-col gap-4">
+        <Table>
+          <THead>
+            <TR>
+              <TH>#</TH>
+              <TH>Date/Time</TH>
+              <TH>Type</TH>
+              <TH>Description</TH>
+              <TH>Corrective Action</TH>
+              <TH>Reported To</TH>
+              <TH>Status</TH>
+            </TR>
+          </THead>
+          <TBody>
+            {entries.map((e) => (
+              <TR key={e.id} className="align-top">
+                <TD>{e.sequenceNumber}</TD>
+                <TD className="whitespace-nowrap">{e.dateTime.toISOString().slice(0, 16).replace('T', ' ')}</TD>
+                <TD>{TYPE_LABELS[e.type]}</TD>
+                <TD className="max-w-xs whitespace-pre-wrap">{e.description}</TD>
+                <TD className="max-w-xs whitespace-pre-wrap">{e.correctiveActionTaken}</TD>
+                <TD>{e.reportedToUser?.fullName ?? '—'}</TD>
+                <TD>
+                  <div className="flex flex-col items-start gap-2">
+                    <Badge status={STATUS_BADGE[e.status] ?? 'neutral'}>{STATUS_LABELS[e.status] ?? e.status}</Badge>
+                    {e.status !== 'OPEN' && (
+                      <span className="text-xs text-text-muted">
+                        Resolved by {e.resolvedByUser?.fullName}
                         {e.resolutionRationale ? ` — ${e.resolutionRationale}` : ''}
                       </span>
                     )}
                     {e.status === 'OPEN' && canResolve && (
                       <ResolveDeviationForm batchRecordId={batchId} deviationId={e.id} />
                     )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {entries.length === 0 && <p className="text-sm text-zinc-500">No deviations logged.</p>}
-        </div>
+                  </div>
+                </TD>
+              </TR>
+            ))}
+          </TBody>
+        </Table>
+        {entries.length === 0 && <p className="text-sm text-text-muted">No deviations logged.</p>}
 
         {canEdit && !noDeviationsConfirmed && (
           <div className="flex flex-col gap-3">
@@ -107,12 +120,9 @@ export default async function Section14Page({
             {entries.length === 0 && (
               <form action={confirmNoDeviations}>
                 <input type="hidden" name="batchRecordId" value={batchId} />
-                <button
-                  type="submit"
-                  className="rounded border border-zinc-400 px-4 py-2 text-sm font-medium dark:border-zinc-600"
-                >
+                <Button type="submit" variant="secondary">
                   Confirm no deviations occurred for this batch
-                </button>
+                </Button>
               </form>
             )}
           </div>

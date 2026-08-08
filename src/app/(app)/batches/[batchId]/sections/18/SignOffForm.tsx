@@ -3,28 +3,19 @@
 import { useActionState } from 'react'
 import { signFinalSignOff } from '@/server/release/actions'
 import type { FormActionState } from '@/server/batches/actions'
+import { Button, Input } from '@/components/ui'
 
 export function SignOffForm({ batchRecordId }: { batchRecordId: string }) {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(signFinalSignOff, undefined)
 
   return (
-    <form action={formAction} className="flex items-center gap-2">
+    <form action={formAction} className="flex flex-wrap items-center gap-2">
       <input type="hidden" name="batchRecordId" value={batchRecordId} />
-      <input
-        type="password"
-        name="password"
-        placeholder="Re-enter your password to sign"
-        required
-        className="rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-      />
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded bg-foreground px-3 py-1 text-sm font-medium text-background disabled:opacity-50"
-      >
+      <Input type="password" name="password" placeholder="Re-enter your password to sign" required className="min-w-0 flex-1" />
+      <Button type="submit" disabled={pending}>
         {pending ? 'Signing…' : 'Sign'}
-      </button>
-      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+      </Button>
+      {state?.error && <p className="w-full text-sm text-danger">{state.error}</p>}
     </form>
   )
 }

@@ -2,6 +2,7 @@
 
 import { z } from 'zod'
 import { redirect } from 'next/navigation'
+import { redirectToBatch } from '@/lib/navigation/redirectToBatch'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { requireSectionAccess } from '@/lib/auth/permissionMatrix'
@@ -96,7 +97,7 @@ export async function createBatchRecord(
     newValue: data.batchNumber,
   })
 
-  redirect(`/batches/${batch.id}`)
+  redirectToBatch(`/batches/${batch.id}`)
 }
 
 const AssignPersonnelSchema = z.object({
@@ -163,5 +164,5 @@ export async function assignBatchPersonnel(
     fieldName: 'personnel',
   })
 
-  redirect(`/batches/${data.batchRecordId}`)
+  redirectToBatch(`/batches/${data.batchRecordId}`)
 }

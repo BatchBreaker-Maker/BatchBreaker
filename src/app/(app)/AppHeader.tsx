@@ -1,0 +1,30 @@
+import Link from 'next/link'
+import { logout } from '@/lib/auth/actions'
+import { Logo } from '@/components/Logo'
+import { Button } from '@/components/ui'
+import type { Role } from '@/generated/prisma/enums'
+
+export function AppHeader({ fullName, role, isAdmin }: { fullName: string; role: Role; isAdmin: boolean }) {
+  return (
+    <header className="flex items-center justify-between gap-4 border-b border-border bg-surface px-4 py-3 sm:px-6">
+      <Link href="/dashboard" className="shrink-0">
+        <Logo />
+      </Link>
+      <div className="flex items-center gap-3 sm:gap-4">
+        <span className="hidden text-sm text-text-muted sm:inline">
+          {fullName} — {role.replaceAll('_', ' ')}
+        </span>
+        {isAdmin && (
+          <Link href="/admin" className="text-sm font-medium text-text hover:text-accent">
+            Admin
+          </Link>
+        )}
+        <form action={logout}>
+          <Button type="submit" variant="secondary">
+            Sign out
+          </Button>
+        </form>
+      </div>
+    </header>
+  )
+}

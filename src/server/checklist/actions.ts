@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { redirectToBatch } from '@/lib/navigation/redirectToBatch'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { requireSectionAccess } from '@/lib/auth/permissionMatrix'
@@ -57,7 +58,7 @@ export async function updateChecklist(
     batchRecordId,
   })
 
-  redirect(`/batches/${batchRecordId}/sections/3`)
+  redirectToBatch(`/batches/${batchRecordId}/sections/3`)
 }
 
 export async function signOffChecklist(formData: FormData): Promise<void> {
@@ -65,7 +66,7 @@ export async function signOffChecklist(formData: FormData): Promise<void> {
   if (!user) redirect('/login')
 
   const batchRecordId = String(formData.get('batchRecordId') ?? '')
-  if (!batchRecordId) redirect(`/batches/${batchRecordId}/sections/3`)
+  if (!batchRecordId) redirectToBatch(`/batches/${batchRecordId}/sections/3`)
   requireSectionAccess(user.role, 3, 'signoff')
 
   const items = await prisma.preProductionChecklistItem.findMany({ where: { batchRecordId } })
@@ -94,5 +95,5 @@ export async function signOffChecklist(formData: FormData): Promise<void> {
     batchRecordId,
   })
 
-  redirect(`/batches/${batchRecordId}/sections/3`)
+  redirectToBatch(`/batches/${batchRecordId}/sections/3`)
 }

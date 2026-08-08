@@ -125,11 +125,14 @@ test('Phase 2 happy path: full Section 1-20 chain with the real HoP/QC review wo
   await expect(page.getByText('Lye Solution')).toBeVisible()
 
   // Section 6 — In-Process Production Record (step 1 only; downstream gates
-  // don't depend on 6.2-6.4 being filled)
+  // don't depend on 6.2-6.4 being filled). Step # and Description are now
+  // separate table columns (Phase 4) rather than one "Step N: <desc>" cell,
+  // so assert on the step-1 default description text instead of the old
+  // combined string.
   await page.goto(`/batches/${batchId}/sections/6`)
   await page.locator('#timePerformed').fill('2026-08-07T09:15')
   await submitAndWait(page, 'Add step')
-  await expect(page.getByText('Step 1:')).toBeVisible()
+  await expect(page.getByText('Lye solution prepared')).toBeVisible()
 
   // Section 7 — Cutting Observations
   await page.goto(`/batches/${batchId}/sections/7`)

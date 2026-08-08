@@ -2,6 +2,7 @@
 
 import { z } from 'zod'
 import { redirect } from 'next/navigation'
+import { redirectToBatch } from '@/lib/navigation/redirectToBatch'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { requireSectionAccess } from '@/lib/auth/permissionMatrix'
@@ -68,5 +69,5 @@ export async function saveYieldReconciliation(
     userId: user.id,
     batchRecordId: data.batchRecordId,
   })
-  redirect(`/batches/${data.batchRecordId}/sections/10`)
+  redirectToBatch(`/batches/${data.batchRecordId}/sections/10`)
 }
