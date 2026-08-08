@@ -454,6 +454,17 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
               />
             )
           })}
+          {batch.additionalEquipmentEntries.map((entry) => (
+            <TableRow
+              key={entry.id}
+              values={[
+                entry.equipmentName,
+                fmtVal(entry.equipmentNumber),
+                fmtBool(entry.cleanedAndVerified),
+                fmtBool(entry.calibrationCurrent),
+              ]}
+            />
+          ))}
         </View>
 
         {/* Section 14 */}

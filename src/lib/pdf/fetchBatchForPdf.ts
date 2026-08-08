@@ -22,6 +22,7 @@ export function fetchBatchForPdf(batchId: string) {
       packagingReturn: true,
       retainedSampleRecord: { include: { collectedByUser: true, destructionAuthorizedByUser: true } },
       equipmentVerifications: { orderBy: { rowKey: 'asc' } },
+      additionalEquipmentEntries: { include: { verifiedByUser: true }, orderBy: { createdAt: 'asc' } },
       deviations: { include: { reportedToUser: true, resolvedByUser: true }, orderBy: { sequenceNumber: 'asc' } },
       noDeviationsConfirmedByUser: true,
       postProductionCloseout: { include: { closeoutByUser: true } },
