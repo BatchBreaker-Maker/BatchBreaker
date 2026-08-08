@@ -209,6 +209,7 @@ model User {
   retainedSampleCollections           RetainedSampleRecord[]      @relation("RetainedSampleCollectedBy")
   retainedSampleDestructions          RetainedSampleRecord[]      @relation("RetainedSampleDestructionAuthorizedBy")
   equipmentVerifications              EquipmentVerification[]
+  additionalEquipmentEntries          AdditionalEquipmentEntry[]
   deviationsReported                  DeviationEntry[]            @relation("DeviationReportedTo")
   deviationsResolved                  DeviationEntry[]            @relation("DeviationResolvedBy")
   postProductionCloseouts             PostProductionCloseout[]
@@ -296,6 +297,7 @@ model BatchRecord {
   packagingReturn            PackagingReturn?
   retainedSampleRecord       RetainedSampleRecord?
   equipmentVerifications     EquipmentVerification[]
+  additionalEquipmentEntries AdditionalEquipmentEntry[]
   deviations                 DeviationEntry[]
   postProductionCloseout     PostProductionCloseout?
   completenessReviewItems    CompletenessReviewItem[]
@@ -699,6 +701,27 @@ model EquipmentVerification {
 
   @@unique([batchRecordId, rowKey])
   @@map("equipment_verifications")
+}
+
+// Section 13 — equipment beyond the 8 fixed paper-form rows above. Operators,
+// HoP, and admin can log as many of these as needed (2026-08-08 direction);
+// free-form name/number rather than an EquipmentRowKey since these aren't
+// printed on the paper form. Deliberately doesn't affect section 13's
+// completion status — that stays tied to the 8 fixed required rows only.
+model AdditionalEquipmentEntry {
+  id                 String      @id @default(uuid()) @db.Uuid
+  batchRecordId      String      @db.Uuid
+  batchRecord        BatchRecord @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  equipmentName      String
+  equipmentNumber    String?
+  cleanedAndVerified Boolean     @default(false)
+  calibrationCurrent Boolean     @default(false)
+  verifiedByUserId   String?     @db.Uuid
+  verifiedByUser     User?       @relation(fields: [verifiedByUserId], references: [id])
+  verifiedDate       DateTime?
+  createdAt          DateTime    @default(now())
+
+  @@map("additional_equipment_entries")
 }
 
 // ===== Section 14 — Deviations & Incidents =====

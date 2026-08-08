@@ -35,6 +35,17 @@ export default async function Section10Page({
     variancePct = expected !== 0 ? (variance / expected) * 100 : 0
   }
 
+  // Prisma's Decimal is a class instance, not a plain object — it can't
+  // cross the Server -> Client Component boundary as a prop, so convert to
+  // string here rather than at display time inside the client form.
+  const serializedYieldRec = yieldRec
+    ? {
+        ...yieldRec,
+        expectedYield: yieldRec.expectedYield.toString(),
+        actualYield: yieldRec.actualYield.toString(),
+      }
+    : null
+
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 10: Yield Reconciliation</h1>
@@ -50,7 +61,7 @@ export default async function Section10Page({
         </dl>
       )}
 
-      {canEdit && <YieldForm batchRecordId={batchId} existing={yieldRec} />}
+      {canEdit && <YieldForm batchRecordId={batchId} existing={serializedYieldRec} />}
     </div>
   )
 }

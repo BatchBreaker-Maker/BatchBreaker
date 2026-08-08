@@ -6,7 +6,21 @@ import type { FormActionState } from '@/server/batches/actions'
 import type { YieldReconciliationModel } from '@/generated/prisma/models'
 import { Button, Card, Input, Label, Textarea } from '@/components/ui'
 
-export function YieldForm({ batchRecordId, existing }: { batchRecordId: string; existing: YieldReconciliationModel | null }) {
+// expectedYield/actualYield are pre-converted to string by the server page —
+// Prisma's Decimal can't cross the Server -> Client Component boundary as a
+// prop.
+type SerializedYieldRecord = Omit<YieldReconciliationModel, 'expectedYield' | 'actualYield'> & {
+  expectedYield: string
+  actualYield: string
+}
+
+export function YieldForm({
+  batchRecordId,
+  existing,
+}: {
+  batchRecordId: string
+  existing: SerializedYieldRecord | null
+}) {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(saveYieldReconciliation, undefined)
 
   return (
@@ -22,7 +36,7 @@ export function YieldForm({ batchRecordId, existing }: { batchRecordId: string; 
               name="expectedYield"
               type="number"
               step="0.001"
-              defaultValue={existing?.expectedYield?.toString()}
+              defaultValue={existing?.expectedYield}
               required
             />
           </div>
@@ -40,7 +54,7 @@ export function YieldForm({ batchRecordId, existing }: { batchRecordId: string; 
               name="actualYield"
               type="number"
               step="0.001"
-              defaultValue={existing?.actualYield?.toString()}
+              defaultValue={existing?.actualYield}
               required
             />
           </div>

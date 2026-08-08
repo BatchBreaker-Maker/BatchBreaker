@@ -1,5 +1,6 @@
 'use server'
 
+import { z } from 'zod'
 import { redirect } from 'next/navigation'
 import { redirectToBatch } from '@/lib/navigation/redirectToBatch'
 import { prisma } from '@/lib/db'
@@ -65,4 +66,56 @@ export async function saveEquipmentVerification(
   })
 
   redirectToBatch(`/batches/${batchRecordId}/sections/13`)
+}
+
+const AddAdditionalEquipmentSchema = z.object({
+  batchRecordId: z.string().uuid(),
+  equipmentName: z.string().min(1),
+  equipmentNumber: z.string().optional(),
+  cleanedAndVerified: z.string().optional(),
+  calibrationCurrent: z.string().optional(),
+})
+
+// Free-form equipment beyond the 8 fixed rows above (operators/HoP/admin
+// only, per user direction). Deliberately does not touch section 13's
+// completion status — that stays tied to the 8 required rows only.
+export async function addAdditionalEquipmentEntry(
+  _prevState: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const user = await verifySession()
+  if (!user) redirect('/login')
+
+  const parsed = AddAdditionalEquipmentSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { error: 'Please fill in the equipment name.' }
+  const data = parsed.data
+  requireSectionAccess(user.role, 13, 'edit')
+
+  const cleanedAndVerified = data.cleanedAndVerified === 'on'
+  const calibrationCurrent = data.calibrationCurrent === 'on'
+  const touched = cleanedAndVerified || calibrationCurrent
+  const now = new Date()
+
+  const entry = await prisma.additionalEquipmentEntry.create({
+    data: {
+      batchRecordId: data.batchRecordId,
+      equipmentName: data.equipmentName,
+      equipmentNumber: data.equipmentNumber?.trim() || null,
+      cleanedAndVerified,
+      calibrationCurrent,
+      verifiedByUserId: touched ? user.id : null,
+      verifiedDate: touched ? now : null,
+    },
+  })
+
+  await recordAuditEntry({
+    actionType: 'CREATE',
+    entityType: 'AdditionalEquipmentEntry',
+    entityId: entry.id,
+    userId: user.id,
+    batchRecordId: data.batchRecordId,
+    newValue: data.equipmentName,
+  })
+
+  redirectToBatch(`/batches/${data.batchRecordId}/sections/13`)
 }
