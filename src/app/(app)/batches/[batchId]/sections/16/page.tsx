@@ -3,10 +3,10 @@ import { CheckCircle2, Circle } from 'lucide-react'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { canAccessSection } from '@/lib/auth/permissionMatrix'
-import { signOffCompletenessReview } from '@/server/completenessReview/actions'
 import { COMPLETENESS_ITEM_LABELS, COMPLETENESS_ITEM_ORDER } from '@/lib/workflow/completenessLabels'
-import { Badge, Button } from '@/components/ui'
+import { Badge } from '@/components/ui'
 import { CompletenessReviewForm } from './CompletenessReviewForm'
+import { SignOffButton } from './SignOffButton'
 
 export default async function Section16Page({
   params,
@@ -76,19 +76,7 @@ export default async function Section16Page({
         </ul>
       )}
 
-      {canSignoff && !signedOff && (
-        <form action={signOffCompletenessReview}>
-          <input type="hidden" name="batchRecordId" value={batchId} />
-          <Button
-            type="submit"
-            variant="secondary"
-            disabled={!allAddressed}
-            title={allAddressed ? undefined : 'All items must be verified or marked N/A first'}
-          >
-            Sign off Section 16 and submit for QC review
-          </Button>
-        </form>
-      )}
+      {canSignoff && !signedOff && <SignOffButton batchRecordId={batchId} allAddressed={allAddressed} />}
     </div>
   )
 }

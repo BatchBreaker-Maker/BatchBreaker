@@ -61,23 +61,31 @@ export async function updateCompletenessReview(
   redirectToBatch(`/batches/${batchRecordId}/sections/16`)
 }
 
-export async function signOffCompletenessReview(formData: FormData): Promise<void> {
+export async function signOffCompletenessReview(
+  _prevState: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
   const user = await verifySession()
   if (!user) redirect('/login')
 
   const batchRecordId = String(formData.get('batchRecordId') ?? '')
+  if (!batchRecordId) return { error: 'Missing batch record.' }
   requireSectionAccess(user.role, 16, 'signoff')
 
   const batch = await prisma.batchRecord.findUnique({ where: { id: batchRecordId } })
   if (!batch || batch.status !== 'PENDING_HOP_REVIEW') {
-    throw new Error('This batch is not pending Head of Production review.')
+    // Most likely a double-submit race (the button has no pending-disable of
+    // its own) landing after the first click already advanced the batch —
+    // a friendly, visible message beats an uncaught throw surfacing as a
+    // generic "server error" page.
+    return { error: 'This batch is not pending Head of Production review. It may have already been submitted.' }
   }
 
   const items = await prisma.completenessReviewItem.findMany({ where: { batchRecordId } })
   const allAddressed =
     items.length === COMPLETENESS_ITEM_ORDER.length && items.every((i) => i.verified || i.notApplicable)
   if (!allAddressed) {
-    throw new Error('All completeness review items must be verified or marked N/A before sign-off.')
+    return { error: 'All completeness review items must be verified or marked N/A before sign-off.' }
   }
 
   const now = new Date()
