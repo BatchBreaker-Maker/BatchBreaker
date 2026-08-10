@@ -22,7 +22,7 @@ export function PostProductionCloseoutForm({
         <input type="hidden" name="batchRecordId" value={batchRecordId} />
 
         <div className="flex flex-col gap-1">
-          <Label htmlFor="bulkStorageLocation">Bulk Storage Location</Label>
+          <Label htmlFor="bulkStorageLocation">Bulk Product Storage Location</Label>
           <Input
             id="bulkStorageLocation"
             name="bulkStorageLocation"

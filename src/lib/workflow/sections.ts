@@ -14,7 +14,7 @@ export const SECTION_TITLES: Record<number, string> = {
   12: 'Retained Sample Record',
   13: 'Equipment & Cleaning Verification',
   14: 'Deviations & Incidents',
-  15: 'Bulk Storage & Post-Production Closeout',
+  15: 'Bulk Product Storage & Post-Production Closeout',
   16: 'Batch Record Completeness Review',
   17: 'Batch Release Decision',
   18: 'Final Sign-Off',

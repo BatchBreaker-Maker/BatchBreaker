@@ -499,10 +499,10 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
 
         {/* Section 15 */}
         <View style={styles.section}>
-          <SectionHeading number={15} title="Bulk Storage &amp; Post-Production Closeout" />
+          <SectionHeading number={15} title="Bulk Product Storage &amp; Post-Production Closeout" />
           {batch.postProductionCloseout ? (
             <>
-              <Field label="Bulk Storage Location" value={batch.postProductionCloseout.bulkStorageLocation} />
+              <Field label="Bulk Product Storage Location" value={batch.postProductionCloseout.bulkStorageLocation} />
               <Field label="Entered in Store Log" value={fmtBool(batch.postProductionCloseout.enteredInStoreLog)} />
               <Field label="Entered in ERP" value={batch.postProductionCloseout.enteredInErp} />
               <Field label="Unused RM Returned" value={batch.postProductionCloseout.unusedRmReturned} />

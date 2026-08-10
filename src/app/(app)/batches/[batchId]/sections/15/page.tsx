@@ -29,7 +29,7 @@ export default async function Section15Page({
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <h1 className="text-xl font-semibold text-text">
-        {batch.batchNumber} — Section 15: Bulk Storage &amp; Post-Production Closeout
+        {batch.batchNumber} — Section 15: Bulk Product Storage &amp; Post-Production Closeout
       </h1>
 
       <section className="flex flex-col gap-3">
