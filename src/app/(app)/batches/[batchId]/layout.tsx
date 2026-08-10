@@ -11,6 +11,7 @@ import {
 } from '@/lib/workflow/batchProgress'
 import { BatchSidebar } from './BatchSidebar'
 import { BatchProgressBar } from './BatchProgressBar'
+import { SectionNavFooter } from './SectionNavFooter'
 
 export default async function BatchLayout({
   children,
@@ -61,7 +62,10 @@ export default async function BatchLayout({
           sectionDisplayStatuses={sectionDisplayStatuses}
           sectionNeedsInput={sectionNeedsInputMap}
         />
-        <div className="min-w-0 flex-1">{children}</div>
+        <div className="flex min-w-0 flex-1 flex-col">
+          {children}
+          <SectionNavFooter batchId={batchId} accessibleSections={accessibleSections} />
+        </div>
       </div>
     </div>
   )

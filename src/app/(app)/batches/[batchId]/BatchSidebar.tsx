@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useSyncExternalStore } from 'react'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, FileDown, Lock, Menu, X } from 'lucide-react'
-import { IMPLEMENTED_SECTIONS, SECTION_TITLES } from '@/lib/workflow/sections'
+import { IMPLEMENTED_SECTIONS, SECTION_TITLES, sectionHref } from '@/lib/workflow/sections'
 import type { SectionDisplayStatus } from '@/lib/workflow/batchProgress'
 import { NeedsInputFlag, StatusDot } from '@/components/ui/Badge'
 
@@ -38,7 +38,7 @@ function setCollapsedPreference(value: boolean) {
 export function BatchSidebar({ batchId, accessibleSections, sectionDisplayStatuses, sectionNeedsInput }: BatchSidebarProps) {
   const pathname = usePathname()
   const match = pathname.match(/\/sections\/(\d+)/)
-  const currentSection = match ? Number(match[1]) : null
+  const currentSection = match ? Number(match[1]) : pathname === `/batches/${batchId}` ? 1 : null
   const accessibleSet = new Set(accessibleSections)
 
   const collapsed = useSyncExternalStore(subscribeCollapsed, getCollapsedSnapshot, getCollapsedServerSnapshot)
@@ -87,7 +87,7 @@ export function BatchSidebar({ batchId, accessibleSections, sectionDisplayStatus
           return (
             <Link
               key={n}
-              href={`/batches/${batchId}/sections/${n}`}
+              href={sectionHref(batchId, n)}
               prefetch={false}
               title={showLabels ? undefined : `${n}. ${SECTION_TITLES[n]}`}
               className={`flex min-h-11 items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
@@ -116,7 +116,7 @@ export function BatchSidebar({ batchId, accessibleSections, sectionDisplayStatus
     <div className="flex items-center justify-between border-t border-border p-3 text-xs">
       {prevSection ? (
         <Link
-          href={`/batches/${batchId}/sections/${prevSection}`}
+          href={sectionHref(batchId, prevSection)}
           prefetch={false}
           className="flex min-h-11 items-center gap-1 rounded-md px-2 text-text-muted hover:text-text"
         >
@@ -127,7 +127,7 @@ export function BatchSidebar({ batchId, accessibleSections, sectionDisplayStatus
       )}
       {nextSection ? (
         <Link
-          href={`/batches/${batchId}/sections/${nextSection}`}
+          href={sectionHref(batchId, nextSection)}
           prefetch={false}
           className="flex min-h-11 items-center gap-1 rounded-md px-2 text-text-muted hover:text-text"
         >

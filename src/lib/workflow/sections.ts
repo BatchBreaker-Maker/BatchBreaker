@@ -26,3 +26,10 @@ export const SECTION_TITLES: Record<number, string> = {
 export const IMPLEMENTED_SECTIONS = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
 ] as const
+
+// Section 1 (Batch Identification) has no dedicated /sections/1 route — its
+// fields are shown directly on the batch overview page, so it links there
+// instead of a route that doesn't exist.
+export function sectionHref(batchId: string, sectionNumber: number): string {
+  return sectionNumber === 1 ? `/batches/${batchId}` : `/batches/${batchId}/sections/${sectionNumber}`
+}
