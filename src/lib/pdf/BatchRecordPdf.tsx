@@ -110,8 +110,23 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
           {new Date().toISOString().slice(0, 10)}
         </Text>
 
+        {/*
+          wrap={false} below keeps a section's content together on one page
+          instead of splitting mid-table/mid-field-list — but only on
+          sections with a fixed, bounded amount of content (a handful of
+          fields, or a checklist with a fixed item count) that can never
+          grow past a page. It's deliberately NOT applied to the open-ended
+          log sections (4,5,6,7,8,9,11,13,14,19) — react-pdf doesn't split a
+          wrap={false} block that ends up taller than a page, it just
+          overflows past the printable area, so applying it to a section
+          that can grow arbitrarily long (many raw material entries, many
+          deviations, etc.) risks visually losing rows off the bottom of the
+          page. Those sections keep the default wrap behavior and paginate
+          normally once they exceed a page, per the original request.
+        */}
+
         {/* Section 1 */}
-        <View style={styles.section}>
+        <View style={styles.section} wrap={false}>
           <SectionHeading number={1} title="Batch Identification" />
           <Field label="Batch Number" value={batch.batchNumber} />
           <Field label="Product Name" value={batch.productName} />
@@ -131,7 +146,7 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
         </View>
 
         {/* Section 2 */}
-        <View style={styles.section}>
+        <View style={styles.section} wrap={false}>
           <SectionHeading number={2} title="Production Personnel" />
           <Field
             label="Production Operator(s)"
@@ -142,7 +157,7 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
         </View>
 
         {/* Section 3 */}
-        <View style={styles.section}>
+        <View style={styles.section} wrap={false}>
           <SectionHeading number={3} title="Pre-Production Checklist" />
           <TableHeader labels={['Item', 'Verified']} />
           {CHECKLIST_ITEM_ORDER.map((key) => {
@@ -341,7 +356,7 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
         </View>
 
         {/* Section 10 */}
-        <View style={styles.section}>
+        <View style={styles.section} wrap={false}>
           <SectionHeading number={10} title="Yield Reconciliation" />
           {batch.yieldReconciliation ? (
             <>
@@ -407,7 +422,7 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
         </View>
 
         {/* Section 12 */}
-        <View style={styles.section}>
+        <View style={styles.section} wrap={false}>
           <SectionHeading number={12} title="Retained Sample Record" />
           {batch.retainedSampleRecord ? (
             <>
@@ -499,7 +514,7 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
         </View>
 
         {/* Section 15 */}
-        <View style={styles.section}>
+        <View style={styles.section} wrap={false}>
           <SectionHeading number={15} title="Bulk Product Storage &amp; Post-Production Closeout" />
           {batch.postProductionCloseout ? (
             <>
@@ -521,7 +536,7 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
         </View>
 
         {/* Section 16 */}
-        <View style={styles.section}>
+        <View style={styles.section} wrap={false}>
           <SectionHeading number={16} title="Batch Record Completeness Review" />
           <TableHeader labels={['Item', 'Status']} />
           {COMPLETENESS_ITEM_ORDER.map((key) => {
@@ -540,7 +555,7 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
         </View>
 
         {/* Section 17 */}
-        <View style={styles.section}>
+        <View style={styles.section} wrap={false}>
           <SectionHeading number={17} title="Batch Release Decision" />
           {batch.releaseDecision?.decision ? (
             <>
@@ -560,7 +575,7 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
         </View>
 
         {/* Section 18 */}
-        <View style={styles.section}>
+        <View style={styles.section} wrap={false}>
           <SectionHeading number={18} title="Final Sign-Off" />
           {batch.signOffs.length === 0 ? (
             <Empty text="Not yet signed." />
