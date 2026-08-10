@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { logout } from '@/lib/auth/actions'
 import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui'
+import { HeaderBatchSearch } from './HeaderBatchSearch'
 import type { Role } from '@/generated/prisma/enums'
 
 export function AppHeader({ fullName, role, isAdmin }: { fullName: string; role: Role; isAdmin: boolean }) {
@@ -14,6 +15,7 @@ export function AppHeader({ fullName, role, isAdmin }: { fullName: string; role:
         <span className="hidden text-sm text-text-muted sm:inline">
           {fullName} — {role.replaceAll('_', ' ')}
         </span>
+        <HeaderBatchSearch />
         {isAdmin && (
           <Link href="/admin" className="text-sm font-medium text-text hover:text-accent">
             Admin

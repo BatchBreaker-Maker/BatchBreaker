@@ -5,8 +5,9 @@ import { verifySession } from '@/lib/auth/session'
 import { canAccessSection } from '@/lib/auth/permissionMatrix'
 import { destructionLookaheadCutoff } from '@/lib/retainedSample/destructionWindow'
 import { batchNeedsInput } from '@/lib/workflow/batchProgress'
-import { Badge, buttonClassName, Card, CardTitle, NeedsInputFlag } from '@/components/ui'
+import { Badge, Button, buttonClassName, Card, CardTitle, Input, Label, NeedsInputFlag, Select } from '@/components/ui'
 import type { BadgeStatus } from '@/components/ui/Badge'
+import type { BatchStatus } from '@/generated/prisma/enums'
 
 const NOTIFIED_ROLES = ['HEAD_OF_PRODUCTION', 'QUALITY_UNIT']
 const DESTRUCTION_LOOKAHEAD_DAYS = 30
@@ -22,13 +23,26 @@ const BATCH_STATUS_BADGE: Record<string, BadgeStatus> = {
   ON_HOLD: 'neutral',
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; status?: string }>
+}) {
   const user = await verifySession()
   if (!user) redirect('/login')
+
+  const { q, status } = await searchParams
+  const query = q?.trim() ?? ''
+  const statusFilter = status && status in BATCH_STATUS_BADGE ? (status as BatchStatus) : null
+  const isFiltered = query !== '' || statusFilter !== null
 
   const canCreateBatch = canAccessSection(user.role, 1, 'edit')
   const batches = canAccessSection(user.role, 1, 'view')
     ? await prisma.batchRecord.findMany({
+        where: {
+          ...(query ? { batchNumber: { contains: query, mode: 'insensitive' } } : {}),
+          ...(statusFilter ? { status: statusFilter } : {}),
+        },
         orderBy: { createdAt: 'desc' },
         take: 20,
         include: {
@@ -117,10 +131,44 @@ export default async function DashboardPage() {
         </section>
       )}
 
-      <section className="flex flex-col gap-2">
+      <section className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold text-text">Batch records</h2>
+        <form action="/dashboard" className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="q">Batch number</Label>
+            <Input
+              id="q"
+              name="q"
+              type="search"
+              placeholder="Search batch number…"
+              defaultValue={query}
+              className="w-56"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="status">Status</Label>
+            <Select id="status" name="status" defaultValue={statusFilter ?? ''} className="w-48">
+              <option value="">All statuses</option>
+              {Object.keys(BATCH_STATUS_BADGE).map((s) => (
+                <option key={s} value={s}>
+                  {s.replaceAll('_', ' ')}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <Button type="submit" variant="secondary">
+            Search
+          </Button>
+          {isFiltered && (
+            <Link href="/dashboard" prefetch={false} className="text-sm text-text-muted hover:text-text hover:underline">
+              Clear
+            </Link>
+          )}
+        </form>
         {batches.length === 0 ? (
-          <p className="text-sm text-text-muted">No batch records yet.</p>
+          <p className="text-sm text-text-muted">
+            {isFiltered ? 'No batch records match your search.' : 'No batch records yet.'}
+          </p>
         ) : (
           <ul className="flex max-w-2xl flex-col divide-y divide-border">
             {batches.map((b) => (
