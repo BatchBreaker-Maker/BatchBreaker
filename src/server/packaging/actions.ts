@@ -10,6 +10,17 @@ import { recordAuditEntry } from '@/lib/audit/recordAuditEntry'
 import { PRE_PACKAGING_ITEM_ORDER } from '@/lib/workflow/packagingLabels'
 import type { FormActionState } from '@/server/batches/actions'
 
+// Section 11's completion is driven solely by the 11.1 pre-packaging
+// checklist (the only part actually required to release the batch) — 11.2
+// (in-process checks) and 11.3 (unused packaging return) are supplementary
+// logs, so recording an entry there must not downgrade a status that 11.1
+// already brought to COMPLETE back to IN_PROGRESS.
+async function computeSection11Status(batchRecordId: string): Promise<'COMPLETE' | 'IN_PROGRESS'> {
+  const items = await prisma.prePackagingChecklistItem.findMany({ where: { batchRecordId } })
+  const allVerified = items.length === PRE_PACKAGING_ITEM_ORDER.length && items.every((i) => i.verified)
+  return allVerified ? 'COMPLETE' : 'IN_PROGRESS'
+}
+
 // ===== 11.1 Pre-Packaging Checklist =====
 export async function savePrePackagingChecklist(
   _prevState: FormActionState,
@@ -94,7 +105,7 @@ export async function addPackagingCheck(
   })
   await prisma.sectionCompletionStatus.updateMany({
     where: { batchRecordId: data.batchRecordId, sectionNumber: 11 },
-    data: { status: 'IN_PROGRESS' },
+    data: { status: await computeSection11Status(data.batchRecordId) },
   })
   await recordAuditEntry({
     actionType: 'CREATE',
@@ -143,7 +154,7 @@ export async function savePackagingReturn(
   })
   await prisma.sectionCompletionStatus.updateMany({
     where: { batchRecordId: data.batchRecordId, sectionNumber: 11 },
-    data: { status: 'IN_PROGRESS' },
+    data: { status: await computeSection11Status(data.batchRecordId) },
   })
   await recordAuditEntry({
     actionType: 'EDIT',
