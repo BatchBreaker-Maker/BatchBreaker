@@ -6,12 +6,13 @@ import { useState, useSyncExternalStore } from 'react'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, FileDown, Lock, Menu, X } from 'lucide-react'
 import { IMPLEMENTED_SECTIONS, SECTION_TITLES } from '@/lib/workflow/sections'
 import type { SectionDisplayStatus } from '@/lib/workflow/batchProgress'
-import { StatusDot } from '@/components/ui/Badge'
+import { NeedsInputFlag, StatusDot } from '@/components/ui/Badge'
 
 interface BatchSidebarProps {
   batchId: string
   accessibleSections: number[]
   sectionDisplayStatuses: Record<number, SectionDisplayStatus>
+  sectionNeedsInput: Record<number, boolean>
 }
 
 // Tiny external store so the persisted collapse preference can be read
@@ -34,7 +35,7 @@ function setCollapsedPreference(value: boolean) {
   collapseListeners.forEach((listener) => listener())
 }
 
-export function BatchSidebar({ batchId, accessibleSections, sectionDisplayStatuses }: BatchSidebarProps) {
+export function BatchSidebar({ batchId, accessibleSections, sectionDisplayStatuses, sectionNeedsInput }: BatchSidebarProps) {
   const pathname = usePathname()
   const match = pathname.match(/\/sections\/(\d+)/)
   const currentSection = match ? Number(match[1]) : null
@@ -97,12 +98,13 @@ export function BatchSidebar({ batchId, accessibleSections, sectionDisplayStatus
             >
               <StatusDot status={status} />
               {showLabels ? (
-                <span className="truncate">
+                <span className="min-w-0 flex-1 truncate">
                   {n}. {SECTION_TITLES[n]}
                 </span>
               ) : (
                 <span>{n}</span>
               )}
+              {sectionNeedsInput[n] && <NeedsInputFlag className="ml-auto" />}
             </Link>
           )
         })}

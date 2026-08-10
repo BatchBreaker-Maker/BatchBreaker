@@ -1,4 +1,5 @@
 import { type HTMLAttributes } from 'react'
+import { AlertTriangle } from 'lucide-react'
 
 export type BadgeStatus = 'success' | 'warning' | 'danger' | 'neutral' | 'accent'
 
@@ -33,4 +34,15 @@ const DOT_CLASSES: Record<BadgeStatus, string> = {
 
 export function StatusDot({ status = 'neutral', className = '' }: { status?: BadgeStatus; className?: string }) {
   return <span aria-hidden="true" className={`inline-block h-2 w-2 shrink-0 rounded-full ${DOT_CLASSES[status]} ${className}`} />
+}
+
+// Hover/focus reveals a native tooltip via `title` — same lightweight
+// pattern already used for the sidebar's "no access" Lock icon, no separate
+// tooltip component needed.
+export function NeedsInputFlag({ className = '' }: { className?: string }) {
+  return (
+    <span title="Input Needed" tabIndex={0} className={`inline-flex shrink-0 items-center ${className}`}>
+      <AlertTriangle aria-label="Input needed" className="h-4 w-4 fill-warning/25 text-warning" />
+    </span>
+  )
 }

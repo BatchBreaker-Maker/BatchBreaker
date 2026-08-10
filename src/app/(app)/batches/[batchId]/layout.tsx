@@ -3,7 +3,12 @@ import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { canAccessSection } from '@/lib/auth/permissionMatrix'
 import { IMPLEMENTED_SECTIONS } from '@/lib/workflow/sections'
-import { computeBatchProgress, sectionDisplayStatus } from '@/lib/workflow/batchProgress'
+import {
+  computeBatchProgress,
+  sectionDisplayStatus,
+  sectionEighteenNeedsInput,
+  sectionNeedsInput,
+} from '@/lib/workflow/batchProgress'
 import { BatchSidebar } from './BatchSidebar'
 import { BatchProgressBar } from './BatchProgressBar'
 
@@ -20,7 +25,13 @@ export default async function BatchLayout({
   const { batchId } = await params
   const batch = await prisma.batchRecord.findUnique({
     where: { id: batchId },
-    select: { productType: true, sectionStatuses: { select: { sectionNumber: true, status: true } } },
+    select: {
+      productType: true,
+      status: true,
+      sectionStatuses: { select: { sectionNumber: true, status: true } },
+      releaseDecision: { select: { decision: true } },
+      signOffs: { select: { role: true } },
+    },
   })
   if (!batch) notFound()
 
@@ -28,6 +39,15 @@ export default async function BatchLayout({
   const accessibleSections = IMPLEMENTED_SECTIONS.filter((n) => canAccessSection(user.role, n, 'view'))
   const sectionDisplayStatuses = Object.fromEntries(
     IMPLEMENTED_SECTIONS.map((n) => [n, sectionDisplayStatus(n, user.role, statusBySection.get(n))]),
+  )
+  const signOffRoles = batch.signOffs.map((s) => s.role)
+  const sectionNeedsInputMap = Object.fromEntries(
+    IMPLEMENTED_SECTIONS.map((n) => [
+      n,
+      n === 18
+        ? sectionEighteenNeedsInput(user.role, batch.status, !!batch.releaseDecision?.decision, signOffRoles)
+        : sectionNeedsInput(n, user.role, batch.productType, batch.status, statusBySection.get(n)),
+    ]),
   )
   const progress = computeBatchProgress(batch.productType, batch.sectionStatuses)
 
@@ -39,6 +59,7 @@ export default async function BatchLayout({
           batchId={batchId}
           accessibleSections={accessibleSections}
           sectionDisplayStatuses={sectionDisplayStatuses}
+          sectionNeedsInput={sectionNeedsInputMap}
         />
         <div className="min-w-0 flex-1">{children}</div>
       </div>

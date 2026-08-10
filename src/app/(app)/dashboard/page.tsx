@@ -4,7 +4,8 @@ import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { canAccessSection } from '@/lib/auth/permissionMatrix'
 import { destructionLookaheadCutoff } from '@/lib/retainedSample/destructionWindow'
-import { Badge, buttonClassName, Card, CardTitle } from '@/components/ui'
+import { batchNeedsInput } from '@/lib/workflow/batchProgress'
+import { Badge, buttonClassName, Card, CardTitle, NeedsInputFlag } from '@/components/ui'
 import type { BadgeStatus } from '@/components/ui/Badge'
 
 const NOTIFIED_ROLES = ['HEAD_OF_PRODUCTION', 'QUALITY_UNIT']
@@ -30,6 +31,11 @@ export default async function DashboardPage() {
     ? await prisma.batchRecord.findMany({
         orderBy: { createdAt: 'desc' },
         take: 20,
+        include: {
+          sectionStatuses: { select: { sectionNumber: true, status: true } },
+          releaseDecision: { select: { decision: true } },
+          signOffs: { select: { role: true } },
+        },
       })
     : []
 
@@ -119,9 +125,19 @@ export default async function DashboardPage() {
           <ul className="flex max-w-2xl flex-col divide-y divide-border">
             {batches.map((b) => (
               <li key={b.id} className="flex items-center justify-between gap-4 py-2">
-                <Link href={`/batches/${b.id}`} prefetch={false} className="min-w-0 truncate text-sm hover:underline">
-                  {b.batchNumber} — {b.productName}
-                </Link>
+                <span className="flex min-w-0 items-center gap-2">
+                  <Link href={`/batches/${b.id}`} prefetch={false} className="min-w-0 truncate text-sm hover:underline">
+                    {b.batchNumber} — {b.productName}
+                  </Link>
+                  {batchNeedsInput(
+                    user.role,
+                    b.productType,
+                    b.status,
+                    b.sectionStatuses,
+                    !!b.releaseDecision?.decision,
+                    b.signOffs.map((s) => s.role),
+                  ) && <NeedsInputFlag />}
+                </span>
                 <Badge status={BATCH_STATUS_BADGE[b.status] ?? 'neutral'}>{b.status.replaceAll('_', ' ')}</Badge>
               </li>
             ))}
