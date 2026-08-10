@@ -4,10 +4,12 @@ import { useActionState } from 'react'
 import { saveRetainedSampleRecord } from '@/server/retainedSample/actions'
 import type { FormActionState } from '@/server/batches/actions'
 import type { RetainedSampleRecordModel } from '@/generated/prisma/models'
+import { useDefaultDateInput } from '@/lib/dateInputDefaults'
 import { Button, Card, Input, Label, Textarea } from '@/components/ui'
 
 export function RetainedSampleForm({ batchRecordId, existing }: { batchRecordId: string; existing: RetainedSampleRecordModel | null }) {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(saveRetainedSampleRecord, undefined)
+  const defaultDateCollected = useDefaultDateInput()
 
   return (
     <Card className="w-full max-w-lg">
@@ -32,7 +34,7 @@ export function RetainedSampleForm({ batchRecordId, existing }: { batchRecordId:
               id="dateCollected"
               name="dateCollected"
               type="date"
-              defaultValue={existing?.dateCollected ? existing.dateCollected.toISOString().slice(0, 10) : ''}
+              defaultValue={existing?.dateCollected ? existing.dateCollected.toISOString().slice(0, 10) : defaultDateCollected}
               required
             />
           </div>

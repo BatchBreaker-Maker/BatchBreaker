@@ -4,6 +4,7 @@ import { useActionState } from 'react'
 import { saveStampingSetup } from '@/server/stamping/actions'
 import type { FormActionState } from '@/server/batches/actions'
 import type { StampingSetupModel } from '@/generated/prisma/models'
+import { useDefaultDateInput } from '@/lib/dateInputDefaults'
 import { Button, Input, Label } from '@/components/ui'
 
 export function StampingSetupForm({
@@ -14,6 +15,7 @@ export function StampingSetupForm({
   existing: StampingSetupModel | null
 }) {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(saveStampingSetup, undefined)
+  const defaultSetupDate = useDefaultDateInput()
 
   return (
     <form action={formAction} className="flex flex-col gap-3">
@@ -30,7 +32,7 @@ export function StampingSetupForm({
             id="setupDate"
             name="setupDate"
             type="date"
-            defaultValue={existing?.setupDate ? existing.setupDate.toISOString().slice(0, 10) : ''}
+            defaultValue={existing?.setupDate ? existing.setupDate.toISOString().slice(0, 10) : defaultSetupDate}
           />
         </div>
       </div>

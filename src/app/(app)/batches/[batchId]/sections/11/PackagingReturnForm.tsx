@@ -4,10 +4,12 @@ import { useActionState } from 'react'
 import { savePackagingReturn } from '@/server/packaging/actions'
 import type { FormActionState } from '@/server/batches/actions'
 import type { PackagingReturnModel } from '@/generated/prisma/models'
+import { useDefaultDateInput } from '@/lib/dateInputDefaults'
 import { Button, Card, Input, Label } from '@/components/ui'
 
 export function PackagingReturnForm({ batchRecordId, existing }: { batchRecordId: string; existing: PackagingReturnModel | null }) {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(savePackagingReturn, undefined)
+  const defaultReturnedDate = useDefaultDateInput()
 
   return (
     <Card className="w-full max-w-lg">
@@ -45,7 +47,7 @@ export function PackagingReturnForm({ batchRecordId, existing }: { batchRecordId
             id="returnedDate"
             name="returnedDate"
             type="date"
-            defaultValue={existing?.returnedDate ? existing.returnedDate.toISOString().slice(0, 10) : ''}
+            defaultValue={existing?.returnedDate ? existing.returnedDate.toISOString().slice(0, 10) : defaultReturnedDate}
           />
         </div>
 

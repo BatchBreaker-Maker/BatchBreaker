@@ -4,6 +4,7 @@ import { useActionState, useState } from 'react'
 import { savePostProductionCloseout } from '@/server/closeout/actions'
 import type { FormActionState } from '@/server/batches/actions'
 import type { PostProductionCloseoutModel } from '@/generated/prisma/models'
+import { useDefaultDateInput } from '@/lib/dateInputDefaults'
 import { Button, Card, Input, Label } from '@/components/ui'
 
 export function PostProductionCloseoutForm({
@@ -15,6 +16,7 @@ export function PostProductionCloseoutForm({
 }) {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(savePostProductionCloseout, undefined)
   const [subcontracted, setSubcontracted] = useState(existing?.stepsSubcontracted ?? false)
+  const defaultBatchCloseoutDate = useDefaultDateInput()
 
   return (
     <Card className="w-full max-w-lg">
@@ -119,7 +121,7 @@ export function PostProductionCloseoutForm({
             id="batchCloseoutDate"
             name="batchCloseoutDate"
             type="date"
-            defaultValue={existing?.batchCloseoutDate ? existing.batchCloseoutDate.toISOString().slice(0, 10) : ''}
+            defaultValue={existing?.batchCloseoutDate ? existing.batchCloseoutDate.toISOString().slice(0, 10) : defaultBatchCloseoutDate}
             required
           />
         </div>
