@@ -42,6 +42,11 @@ export default async function Section13Page({
     <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
       <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 13: Equipment &amp; Cleaning Verification</h1>
 
+      <p className="text-sm text-text-muted">
+        If multiple pieces of equipment of the same type were used for this batch, enter each equipment ID
+        separated by a comma, followed by any comments.
+      </p>
+
       <section className="flex flex-col gap-3">
         {canEdit ? (
           <EquipmentVerificationForm batchRecordId={batchId} existingByRow={existingByRow} />
