@@ -34,6 +34,7 @@ const styles = StyleSheet.create({
   tableRow: { flexDirection: 'row', borderBottom: '0.5 solid #cccccc', paddingVertical: 2 },
   cell: { flex: 1, paddingRight: 4 },
   empty: { color: '#999999', fontStyle: 'italic' },
+  endOfRecord: { marginTop: 20, textAlign: 'center', fontSize: 9, fontStyle: 'italic', color: '#555555' },
 })
 
 function fmtDate(d: Date | null | undefined): string {
@@ -141,7 +142,7 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
         </View>
 
         {/* Section 3 */}
-        <View style={styles.section} break>
+        <View style={styles.section}>
           <SectionHeading number={3} title="Pre-Production Checklist" />
           <TableHeader labels={['Item', 'Verified']} />
           {CHECKLIST_ITEM_ORDER.map((key) => {
@@ -209,7 +210,7 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
         </View>
 
         {/* Section 6 */}
-        <View style={styles.section} break>
+        <View style={styles.section}>
           <SectionHeading number={6} title="In-Process Production Record" />
           <Text style={styles.subheading}>6.1 — Processing Steps</Text>
           {batch.processingSteps.length === 0 ? (
@@ -278,7 +279,7 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
         </View>
 
         {/* Section 8 */}
-        <View style={styles.section} break>
+        <View style={styles.section}>
           <SectionHeading number={8} title="Bar Stamping / Press Operations" />
           <Text style={styles.subheading}>8.1 — Stamping Setup</Text>
           {batch.stampingSetup ? (
@@ -362,7 +363,7 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
         </View>
 
         {/* Section 11 */}
-        <View style={styles.section} break>
+        <View style={styles.section}>
           <SectionHeading number={11} title="Packaging Operations" />
           <Text style={styles.subheading}>11.1 — Pre-Packaging Checklist</Text>
           <TableHeader labels={['Item', 'Verified']} />
@@ -468,7 +469,7 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
         </View>
 
         {/* Section 14 */}
-        <View style={styles.section} break>
+        <View style={styles.section}>
           <SectionHeading number={14} title="Deviations &amp; Incidents" />
           {batch.noDeviationsConfirmedDate && (
             <Text style={{ marginBottom: 4 }}>
@@ -520,7 +521,7 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
         </View>
 
         {/* Section 16 */}
-        <View style={styles.section} break>
+        <View style={styles.section}>
           <SectionHeading number={16} title="Batch Record Completeness Review" />
           <TableHeader labels={['Item', 'Status']} />
           {COMPLETENESS_ITEM_ORDER.map((key) => {
@@ -577,7 +578,7 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
         </View>
 
         {/* Section 19 */}
-        <View style={styles.section} break>
+        <View style={styles.section}>
           <SectionHeading number={19} title="Additional Observations &amp; Notes" />
           {batch.notes.length === 0 ? (
             <Empty text="No notes recorded." />
@@ -592,6 +593,8 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
             ))
           )}
         </View>
+
+        <Text style={styles.endOfRecord}>— End of Batch Record —</Text>
       </Page>
     </Document>
   )
