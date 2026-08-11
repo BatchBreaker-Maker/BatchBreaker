@@ -28,7 +28,7 @@ export default async function AdminPage() {
   const users = await prisma.user.findMany({ orderBy: { fullName: 'asc' } })
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 p-4 sm:p-6 lg:p-8">
+    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
       <h1 className="text-xl font-semibold text-text">Admin — User Accounts</h1>
 
       <section className="flex flex-col gap-3">
@@ -77,7 +77,7 @@ export default async function AdminPage() {
         </Table>
       </section>
 
-      <section className="mx-auto flex w-full max-w-lg flex-col gap-3">
+      <section className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold text-text">Create User</h2>
         <CreateUserForm />
       </section>
