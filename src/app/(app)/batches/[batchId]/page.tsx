@@ -6,6 +6,7 @@ import { canAccessSection } from '@/lib/auth/permissionMatrix'
 import { IMPLEMENTED_SECTIONS, SECTION_TITLES } from '@/lib/workflow/sections'
 import { sectionDisplayStatus } from '@/lib/workflow/batchProgress'
 import { Badge, Card } from '@/components/ui'
+import { BatchIdentificationForm } from './BatchIdentificationForm'
 
 export default async function BatchOverviewPage({
   params,
@@ -32,6 +33,7 @@ export default async function BatchOverviewPage({
 
   const statusBySection = new Map(batch.sectionStatuses.map((s) => [s.sectionNumber, s.status]))
   const visibleSections = IMPLEMENTED_SECTIONS.filter((n) => canAccessSection(user.role, n, 'view'))
+  const canEditIdentification = canAccessSection(user.role, 1, 'edit')
 
   return (
     <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
@@ -45,22 +47,24 @@ export default async function BatchOverviewPage({
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-semibold text-text">Section 1 — Batch Identification</h2>
         <Card className="max-w-2xl">
-          <dl className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-            <dt className="text-text-muted">Formula</dt>
-            <dd className="text-text">{batch.formulaNumber} v{batch.formulaVersion}</dd>
-            <dt className="text-text-muted">Batch size</dt>
-            <dd className="text-text">{batch.batchSizeTarget.toString()} {batch.batchSizeUnit}</dd>
-            <dt className="text-text-muted">Production date</dt>
-            <dd className="text-text">{batch.productionDate.toISOString().slice(0, 10)}</dd>
-            <dt className="text-text-muted">Manufacturing site / room</dt>
-            <dd className="text-text">{batch.manufacturingSiteRoom || '—'}</dd>
-            <dt className="text-text-muted">Complaint / recall ref</dt>
-            <dd className="text-text">{batch.complaintRecallRef || 'N/A'}</dd>
-            <dt className="text-text-muted">Adverse event ref</dt>
-            <dd className="text-text">{batch.adverseEventRef || 'N/A'}</dd>
-            <dt className="text-text-muted">Record retention deadline</dt>
-            <dd className="text-text">{batch.retentionDeadline.toISOString().slice(0, 10)}</dd>
-          </dl>
+          <BatchIdentificationForm
+            batchRecordId={batch.id}
+            productName={batch.productName}
+            productCodeSku={batch.productCodeSku}
+            productType={batch.productType}
+            formulaNumber={batch.formulaNumber}
+            formulaVersion={batch.formulaVersion}
+            batchSizeTarget={batch.batchSizeTarget.toString()}
+            batchSizeUnit={batch.batchSizeUnit}
+            productionDate={batch.productionDate.toISOString().slice(0, 10)}
+            plannedCompletionDate={batch.plannedCompletionDate ? batch.plannedCompletionDate.toISOString().slice(0, 10) : null}
+            retentionDeadline={batch.retentionDeadline.toISOString().slice(0, 10)}
+            finishedProductSpecRef={batch.finishedProductSpecRef}
+            manufacturingSiteRoom={batch.manufacturingSiteRoom}
+            complaintRecallRef={batch.complaintRecallRef}
+            adverseEventRef={batch.adverseEventRef}
+            canEdit={canEditIdentification}
+          />
         </Card>
       </section>
 

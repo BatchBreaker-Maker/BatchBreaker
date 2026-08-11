@@ -100,6 +100,57 @@ export async function createBatchRecord(
   redirectToBatch(`/batches/${batch.id}`)
 }
 
+const UpdateBatchIdentificationSchema = z.object({
+  batchRecordId: z.string().uuid(),
+  finishedProductSpecRef: z.string().optional(),
+  manufacturingSiteRoom: z.string().optional(),
+  complaintRecallRef: z.string().optional(),
+  adverseEventRef: z.string().optional(),
+})
+
+// Section 1 is marked COMPLETE the moment a batch is created (see
+// createBatchRecord), and every other Section 1 field is permanently locked
+// after that — these four are the sole exception, per explicit user
+// direction (2026-08-11): they're cross-references that can legitimately
+// become known only after production (a spec revision, an assigned room, a
+// complaint/adverse-event number opened later), unlike identity fields such
+// as batch number, product, or formula which must never drift post-entry.
+export async function updateBatchIdentification(
+  _prevState: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const user = await verifySession()
+  if (!user) redirect('/login')
+  requireSectionAccess(user.role, 1, 'edit')
+
+  const parsed = UpdateBatchIdentificationSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) {
+    return { error: 'Please check the fields and try again.' }
+  }
+  const data = parsed.data
+
+  await prisma.batchRecord.update({
+    where: { id: data.batchRecordId },
+    data: {
+      finishedProductSpecRef: data.finishedProductSpecRef || null,
+      manufacturingSiteRoom: data.manufacturingSiteRoom || null,
+      complaintRecallRef: data.complaintRecallRef || null,
+      adverseEventRef: data.adverseEventRef || null,
+    },
+  })
+
+  await recordAuditEntry({
+    actionType: 'EDIT',
+    entityType: 'BatchRecord',
+    entityId: data.batchRecordId,
+    userId: user.id,
+    batchRecordId: data.batchRecordId,
+    fieldName: 'batchIdentification',
+  })
+
+  redirectToBatch(`/batches/${data.batchRecordId}`)
+}
+
 const AssignPersonnelSchema = z.object({
   batchRecordId: z.string().uuid(),
   productionOperatorNames: z.string().min(1),
