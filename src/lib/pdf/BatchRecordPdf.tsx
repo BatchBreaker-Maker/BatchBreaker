@@ -228,7 +228,7 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
         <View style={styles.section}>
           <SectionHeading number={6} title="In-Process Production Record" />
           <Text style={styles.subheading}>6.1 — Processing Steps</Text>
-          {batch.processingSteps.length === 0 ? (
+          {batch.processingSteps.length === 0 && batch.additionalProcessingSteps.length === 0 ? (
             <Empty text="No processing steps recorded yet." />
           ) : (
             <>
@@ -237,6 +237,12 @@ export function BatchRecordPdf({ batch }: { batch: BatchForPdf }) {
                 <TableRow
                   key={s.id}
                   values={[String(s.stepNumber), s.stepDescription, fmtDateTime(s.timePerformed), fmtVal(s.observationsNotes)]}
+                />
+              ))}
+              {batch.additionalProcessingSteps.map((s) => (
+                <TableRow
+                  key={s.id}
+                  values={['—', s.stepDescription, fmtDateTime(s.timePerformed), fmtVal(s.observationsNotes)]}
                 />
               ))}
             </>

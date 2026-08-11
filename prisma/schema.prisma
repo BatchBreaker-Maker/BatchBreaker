@@ -213,6 +213,7 @@ model User {
   rawMaterialHopVerifications         RawMaterialEntry[]          @relation("RawMaterialHopVerifiedBy")
   temperatureEntries                  TemperatureEntry[]
   processingSteps                     ProcessingStep[]
+  additionalProcessingSteps           AdditionalProcessingStep[]
   stampingSetups                      StampingSetup[]
   pressRuns                           PressRun[]
   samplingEntries                     SamplingEntry[]
@@ -297,6 +298,7 @@ model BatchRecord {
   rawMaterialEntries         RawMaterialEntry[]
   temperatureEntries         TemperatureEntry[]
   processingSteps            ProcessingStep[]
+  additionalProcessingSteps  AdditionalProcessingStep[]
   homogeneityChecks          HomogeneityCheck[]
   cureRecords                CureRecord[]
   cuttingObservations        CuttingObservation[]
@@ -475,7 +477,7 @@ model TemperatureEntry {
   @@map("temperature_entries")
 }
 
-// ===== Section 6.1 — Processing Steps =====
+// ===== Section 6.1 — Processing Steps (7 fixed rows, one per step) =====
 model ProcessingStep {
   id                String      @id @default(uuid()) @db.Uuid
   batchRecordId     String      @db.Uuid
@@ -488,12 +490,25 @@ model ProcessingStep {
   observationsNotes String?
   createdAt         DateTime    @default(now())
 
-  correctsEntryId    String?          @db.Uuid
-  correctsEntry      ProcessingStep?  @relation("ProcessingStepCorrection", fields: [correctsEntryId], references: [id])
-  correctedByEntries ProcessingStep[] @relation("ProcessingStepCorrection")
-  correctionReason   String?
-
+  @@unique([batchRecordId, stepNumber])
   @@map("processing_steps")
+}
+
+// Free-form steps beyond the 7 fixed rows above — mirrors
+// AdditionalEquipmentEntry (section 13). Unlike ProcessingStep, this is an
+// open-ended, append-only list (any number of entries per batch).
+model AdditionalProcessingStep {
+  id                String      @id @default(uuid()) @db.Uuid
+  batchRecordId     String      @db.Uuid
+  batchRecord       BatchRecord @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
+  stepDescription   String
+  timePerformed     DateTime
+  performedByUserId String      @db.Uuid
+  performedByUser   User        @relation(fields: [performedByUserId], references: [id])
+  observationsNotes String?
+  createdAt         DateTime    @default(now())
+
+  @@map("additional_processing_steps")
 }
 
 // ===== Section 6.2 — Visual Homogeneity Checks (5 fixed items) =====

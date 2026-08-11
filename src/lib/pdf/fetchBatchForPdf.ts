@@ -10,6 +10,7 @@ export function fetchBatchForPdf(batchId: string) {
       rawMaterialEntries: { orderBy: { lineNumber: 'asc' } },
       temperatureEntries: { orderBy: { lineNumber: 'asc' } },
       processingSteps: { orderBy: { stepNumber: 'asc' } },
+      additionalProcessingSteps: { orderBy: { createdAt: 'asc' } },
       homogeneityChecks: true,
       cureRecords: true,
       cuttingObservations: { orderBy: { pourNumber: 'asc' } },
