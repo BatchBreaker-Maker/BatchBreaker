@@ -39,7 +39,7 @@ export default async function Section13Page({
   const canEdit = canAccessSection(user.role, 13, 'edit')
 
   return (
-    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 p-4 sm:p-6 lg:p-8">
       <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 13: Equipment &amp; Cleaning Verification</h1>
 
       <p className="text-sm text-text-muted">
@@ -59,7 +59,7 @@ export default async function Section13Page({
         <h2 className="text-sm font-semibold text-text">Additional Equipment</h2>
 
         {additionalEntries.length > 0 ? (
-          <div className="max-w-3xl">
+          <div className="mx-auto w-full max-w-3xl">
             <Table>
               <THead>
                 <TR>

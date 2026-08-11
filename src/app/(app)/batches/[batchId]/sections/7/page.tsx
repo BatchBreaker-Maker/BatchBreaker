@@ -52,7 +52,7 @@ export default async function Section7Page({
   }))
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 7: Soap Block Cutting Observations</h1>
         {canApprove && (
@@ -70,7 +70,7 @@ export default async function Section7Page({
 
       {canEdit && <CuttingObservationForm batchRecordId={batchId} />}
 
-      <section className="flex max-w-2xl flex-col gap-2">
+      <section className="mx-auto flex w-full max-w-2xl flex-col gap-2">
         <h2 className="text-sm font-semibold text-text">Overall Cutting Observations / Additional Comments</h2>
         {canEdit ? (
           <form action={saveCuttingOverallComments} className="flex flex-col gap-2">

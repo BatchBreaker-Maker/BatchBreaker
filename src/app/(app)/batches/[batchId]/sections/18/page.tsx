@@ -37,13 +37,13 @@ export default async function Section18Page({
   const userSlot = userSignOffRole(user.role)
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 18: Final Sign-Off</h1>
       {!readyToSign && !fullyProcessed && (
         <p className="text-sm text-text-muted">Section 17 must record a release decision before sign-off can begin.</p>
       )}
 
-      <ul className="flex max-w-lg flex-col gap-3">
+      <ul className="mx-auto flex w-full max-w-xl flex-col gap-3">
         {SIGN_OFF_ROLE_ORDER.map(({ role, label }) => {
           const signOff = batch.signOffs.find((s) => s.role === role)
           const canSignThisSlot = readyToSign && !signOff && userSlot === role && canAccessSection(user.role, 18, 'signoff')

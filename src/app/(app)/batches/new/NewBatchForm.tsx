@@ -29,7 +29,7 @@ export function NewBatchForm() {
   const batchNumbersMatch = batchNumber === confirmBatchNumber
 
   return (
-    <form action={formAction} className="flex w-full max-w-lg flex-col gap-4">
+    <form action={formAction} className="mx-auto flex w-full max-w-xl flex-col gap-4">
       <div className="flex flex-col gap-1">
         <LockedLabel htmlFor="batchNumber">Batch Number</LockedLabel>
         <Input

@@ -14,7 +14,7 @@ export function PersonnelForm({
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(assignBatchPersonnel, undefined)
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="mx-auto w-full max-w-lg">
       <form action={formAction} className="flex flex-col gap-4">
         <input type="hidden" name="batchRecordId" value={batchRecordId} />
 

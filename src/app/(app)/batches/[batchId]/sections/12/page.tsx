@@ -29,10 +29,10 @@ export default async function Section12Page({
   const canEdit = canAccessSection(user.role, 12, 'edit')
 
   return (
-    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 p-4 sm:p-6 lg:p-8">
       <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 12: Retained Sample</h1>
 
-      <section className="flex max-w-lg flex-col gap-3">
+      <section className="mx-auto flex w-full max-w-xl flex-col gap-3">
         {canEdit ? (
           <RetainedSampleForm batchRecordId={batchId} existing={record} />
         ) : (
@@ -41,7 +41,13 @@ export default async function Section12Page({
       </section>
 
       {record && (
-        <Card className={record.destructionDate ? 'w-full max-w-lg' : 'w-full max-w-lg border-warning/30 bg-warning/5'}>
+        <Card
+          className={
+            record.destructionDate
+              ? 'mx-auto w-full max-w-xl'
+              : 'mx-auto w-full max-w-xl border-warning/30 bg-warning/5'
+          }
+        >
           <CardTitle className={record.destructionDate ? undefined : 'text-warning'}>Sample Destruction</CardTitle>
           {record.destructionDate ? (
             <p className="mt-2 text-sm text-text-muted">

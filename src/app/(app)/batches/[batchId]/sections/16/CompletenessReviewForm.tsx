@@ -19,7 +19,7 @@ export function CompletenessReviewForm({
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(updateCompletenessReview, undefined)
 
   return (
-    <form action={formAction} className="flex w-full max-w-2xl flex-col gap-1">
+    <form action={formAction} className="mx-auto flex w-full max-w-2xl flex-col gap-1">
       <input type="hidden" name="batchRecordId" value={batchRecordId} />
       {COMPLETENESS_ITEM_ORDER.map((key) => (
         <div

@@ -12,7 +12,7 @@ export function PackagingReturnForm({ batchRecordId, existing }: { batchRecordId
   const defaultReturnedDate = useDefaultDateInput()
 
   return (
-    <Card className="w-full max-w-lg">
+    <Card className="mx-auto w-full max-w-xl">
       <form action={formAction} className="flex flex-col gap-3">
         <input type="hidden" name="batchRecordId" value={batchRecordId} />
 

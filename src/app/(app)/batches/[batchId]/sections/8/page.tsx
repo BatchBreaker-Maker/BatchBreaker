@@ -42,7 +42,7 @@ export default async function Section8Page({
   const canApprove = canAccessSection(user.role, 8, 'signoff')
 
   return (
-    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 p-4 sm:p-6 lg:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 8: Bar Stamping / Press Operations</h1>
         {canApprove && (
@@ -56,7 +56,7 @@ export default async function Section8Page({
         )}
       </div>
 
-      <section className="flex max-w-2xl flex-col gap-3">
+      <section className="mx-auto flex w-full max-w-2xl flex-col gap-3">
         <h2 className="text-sm font-semibold text-text">8.1 — Press Setup Verification</h2>
         {canEdit && <StampingSetupForm batchRecordId={batchId} existing={setup} />}
       </section>

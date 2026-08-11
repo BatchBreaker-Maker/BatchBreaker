@@ -32,10 +32,10 @@ export default async function Section19Page({
   const canEdit = canAccessSection(user.role, 19, 'edit')
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 19: Additional Observations &amp; Notes</h1>
 
-      <ul className="flex max-w-2xl flex-col gap-3">
+      <ul className="mx-auto flex w-full max-w-2xl flex-col gap-3">
         {notes.map((n) => (
           <li key={n.id}>
             <Card>

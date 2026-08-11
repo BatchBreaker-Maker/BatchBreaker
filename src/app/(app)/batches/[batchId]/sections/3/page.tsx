@@ -40,7 +40,7 @@ export default async function Section3Page({
   const canSignoff = canAccessSection(user.role, 3, 'signoff')
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 3: Pre-Production Checklist</h1>
 
       {signedOff && signoffUser && (
@@ -53,7 +53,7 @@ export default async function Section3Page({
       {canEdit ? (
         <ChecklistForm batchRecordId={batchId} verifiedItems={verifiedItems} />
       ) : (
-        <ul className="flex max-w-2xl flex-col gap-1 text-sm">
+        <ul className="mx-auto flex w-full max-w-2xl flex-col gap-1 text-sm">
           {CHECKLIST_ITEM_ORDER.map((key) => (
             <li key={key} className="flex items-center gap-3 px-2 py-1.5 text-text">
               {verifiedItems.has(key) ? (

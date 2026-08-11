@@ -30,13 +30,13 @@ export default async function Section20Page({
   })
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <div>
         <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 20: Change History</h1>
         <p className="text-sm text-text-muted">System-generated. Every recorded action on this batch, in order.</p>
       </div>
 
-      <div className="max-w-4xl">
+      <div className="w-full">
         <Table>
           <THead>
             <TR>

@@ -28,7 +28,7 @@ export function SamplingEntryLogTable({
   const [correcting, setCorrecting] = useState<EntryWithCorrections | null>(null)
 
   return (
-    <div className="max-w-4xl">
+    <div className="mx-auto w-full max-w-4xl">
       <Table>
         <THead>
           <TR>

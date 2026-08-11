@@ -43,7 +43,7 @@ export default async function Section16Page({
   const canSignoff = canAccessSection(user.role, 16, 'signoff')
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <h1 className="text-xl font-semibold text-text">
         {batch.batchNumber} — Section 16: Batch Record Completeness Review
       </h1>
@@ -58,7 +58,7 @@ export default async function Section16Page({
       {canEdit ? (
         <CompletenessReviewForm batchRecordId={batchId} verifiedItems={verifiedItems} naItems={naItems} />
       ) : (
-        <ul className="flex max-w-2xl flex-col gap-1 text-sm">
+        <ul className="mx-auto flex w-full max-w-2xl flex-col gap-1 text-sm">
           {COMPLETENESS_ITEM_ORDER.map((key) => (
             <li key={key} className="flex min-h-11 items-center gap-3 px-2 py-1.5 text-text">
               <span className="flex w-10 shrink-0 items-center">

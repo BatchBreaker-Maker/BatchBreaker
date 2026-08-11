@@ -12,7 +12,7 @@ export function AdditionalEquipmentForm({ batchRecordId }: { batchRecordId: stri
   )
 
   return (
-    <Card className="w-full max-w-lg">
+    <Card className="mx-auto w-full max-w-xl">
       <form action={formAction} className="flex flex-col gap-3">
         <input type="hidden" name="batchRecordId" value={batchRecordId} />
         <h3 className="text-sm font-semibold text-text">Add additional equipment</h3>

@@ -73,7 +73,7 @@ export default async function DashboardPage({
     : [[], []]
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-xl font-semibold text-text">Welcome, {user.fullName}</h1>
         {canCreateBatch && (
@@ -170,7 +170,7 @@ export default async function DashboardPage({
             {isFiltered ? 'No batch records match your search.' : 'No batch records yet.'}
           </p>
         ) : (
-          <ul className="flex max-w-2xl flex-col divide-y divide-border">
+          <ul className="flex w-full flex-col divide-y divide-border">
             {batches.map((b) => (
               <li key={b.id} className="flex items-center justify-between gap-4 py-2">
                 <span className="flex min-w-0 items-center gap-2">

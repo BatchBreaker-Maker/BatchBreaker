@@ -28,7 +28,7 @@ export function CuttingObservationLogTable({
   const [correcting, setCorrecting] = useState<ObservationWithCorrections | null>(null)
 
   return (
-    <div className="max-w-5xl">
+    <div className="mx-auto w-full max-w-5xl">
       <Table>
         <THead>
           <TR>

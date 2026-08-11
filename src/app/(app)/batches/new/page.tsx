@@ -18,7 +18,7 @@ export default async function NewBatchPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <div>
         <h1 className="text-xl font-semibold text-text">New Batch Record — Section 1: Batch Identification</h1>
         <p className="text-sm text-text-muted">

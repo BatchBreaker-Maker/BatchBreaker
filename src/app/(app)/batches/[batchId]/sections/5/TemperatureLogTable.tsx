@@ -29,7 +29,7 @@ export function TemperatureLogTable({
   const [correcting, setCorrecting] = useState<EntryWithCorrections | null>(null)
 
   return (
-    <div className="max-w-3xl">
+    <div className="mx-auto w-full max-w-3xl">
       <Table>
         <THead>
           <TR>

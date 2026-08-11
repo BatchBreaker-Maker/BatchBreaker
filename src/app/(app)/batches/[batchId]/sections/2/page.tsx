@@ -30,7 +30,7 @@ export default async function Section2Page({
   const productionOperatorNames = batch.productionOperatorNames ?? []
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 2: Production Personnel</h1>
       {canEdit ? (
         <PersonnelForm
@@ -42,7 +42,7 @@ export default async function Section2Page({
           }}
         />
       ) : (
-        <dl className="grid max-w-md grid-cols-2 gap-x-8 gap-y-2 text-sm">
+        <dl className="mx-auto grid w-full max-w-lg grid-cols-2 gap-x-8 gap-y-2 text-sm">
           <dt className="text-text-muted">Production Operator(s)</dt>
           <dd className="text-text">{productionOperatorNames.length > 0 ? productionOperatorNames.join(', ') : '—'}</dd>
           <dt className="text-text-muted">Head of Production</dt>

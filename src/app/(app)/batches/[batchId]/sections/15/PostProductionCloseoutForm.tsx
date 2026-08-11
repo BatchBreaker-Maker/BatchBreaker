@@ -19,7 +19,7 @@ export function PostProductionCloseoutForm({
   const defaultBatchCloseoutDate = useDefaultDateInput()
 
   return (
-    <Card className="w-full max-w-lg">
+    <Card className="mx-auto w-full max-w-xl">
       <form action={formAction} className="flex flex-col gap-4">
         <input type="hidden" name="batchRecordId" value={batchRecordId} />
 

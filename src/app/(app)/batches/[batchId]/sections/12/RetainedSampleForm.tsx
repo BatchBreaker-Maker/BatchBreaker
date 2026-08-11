@@ -12,7 +12,7 @@ export function RetainedSampleForm({ batchRecordId, existing }: { batchRecordId:
   const defaultDateCollected = useDefaultDateInput()
 
   return (
-    <Card className="w-full max-w-lg">
+    <Card className="w-full">
       <form action={formAction} className="flex flex-col gap-3">
         <input type="hidden" name="batchRecordId" value={batchRecordId} />
 

@@ -12,7 +12,7 @@ export function SamplingEntryForm({ batchRecordId }: { batchRecordId: string }) 
   const defaultDateTime = useDefaultDateTimeLocal()
 
   return (
-    <Card className="w-full max-w-2xl">
+    <Card className="mx-auto w-full max-w-3xl">
       <form action={formAction} className="flex flex-col gap-3">
         <input type="hidden" name="batchRecordId" value={batchRecordId} />
         <h3 className="text-sm font-semibold text-text">Add sampling entry</h3>

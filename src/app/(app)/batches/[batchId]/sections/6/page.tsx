@@ -55,7 +55,7 @@ export default async function Section6Page({
   const postCut = serializeCureRecord(cureRecords.find((c) => c.phase === 'POST_CUT'))
 
   return (
-    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 p-4 sm:p-6 lg:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 6: In-Process Production Record</h1>
         {canApprove && (
@@ -80,7 +80,7 @@ export default async function Section6Page({
         />
       </section>
 
-      <section className="flex max-w-2xl flex-col gap-3">
+      <section className="mx-auto flex w-full max-w-2xl flex-col gap-3">
         <h2 className="text-sm font-semibold text-text">6.2 — Visual Homogeneity &amp; Consistency Checks</h2>
         {canEdit ? (
           <HomogeneityChecksForm batchRecordId={batchId} existing={homogeneityByItem} />
@@ -95,12 +95,12 @@ export default async function Section6Page({
         )}
       </section>
 
-      <section className="flex max-w-2xl flex-col gap-3">
+      <section className="mx-auto flex w-full max-w-2xl flex-col gap-3">
         <h2 className="text-sm font-semibold text-text">6.3 — Cure/Hold Record (Pre-Cut)</h2>
         {canEdit && <CureRecordForm batchRecordId={batchId} phase="PRE_CUT" existing={preCut} />}
       </section>
 
-      <section className="flex max-w-2xl flex-col gap-3">
+      <section className="mx-auto flex w-full max-w-2xl flex-col gap-3">
         <h2 className="text-sm font-semibold text-text">6.4 — Cure/Hold Record (Post-Cut)</h2>
         {canEdit && <CureRecordForm batchRecordId={batchId} phase="POST_CUT" existing={postCut} />}
       </section>

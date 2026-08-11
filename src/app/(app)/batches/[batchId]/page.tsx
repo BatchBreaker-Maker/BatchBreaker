@@ -36,7 +36,7 @@ export default async function BatchOverviewPage({
   const canEditIdentification = canAccessSection(user.role, 1, 'edit')
 
   return (
-    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 p-4 sm:p-6 lg:p-8">
       <div>
         <h1 className="text-xl font-semibold text-text">{batch.batchNumber}</h1>
         <p className="text-sm text-text-muted">
@@ -46,7 +46,7 @@ export default async function BatchOverviewPage({
 
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-semibold text-text">Section 1 — Batch Identification</h2>
-        <Card className="max-w-2xl">
+        <Card className="mx-auto w-full max-w-2xl">
           <BatchIdentificationForm
             batchRecordId={batch.id}
             productName={batch.productName}
@@ -70,7 +70,7 @@ export default async function BatchOverviewPage({
 
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-semibold text-text">Sections</h2>
-        <ul className="flex max-w-2xl flex-col divide-y divide-border">
+        <ul className="mx-auto flex w-full max-w-2xl flex-col divide-y divide-border">
           {visibleSections
             .filter((n) => n !== 1)
             .map((n) => (

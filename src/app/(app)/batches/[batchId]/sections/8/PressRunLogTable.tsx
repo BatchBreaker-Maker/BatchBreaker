@@ -20,7 +20,7 @@ export function PressRunLogTable({
   const [correcting, setCorrecting] = useState<RunWithCorrections | null>(null)
 
   return (
-    <div className="max-w-3xl">
+    <div className="mx-auto w-full max-w-3xl">
       <Table>
         <THead>
           <TR>

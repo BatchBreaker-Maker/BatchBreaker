@@ -9,7 +9,7 @@ export function BatchNoteForm({ batchRecordId }: { batchRecordId: string }) {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(addBatchNote, undefined)
 
   return (
-    <form action={formAction} className="flex w-full max-w-lg flex-col gap-3">
+    <form action={formAction} className="mx-auto flex w-full max-w-2xl flex-col gap-3">
       <input type="hidden" name="batchRecordId" value={batchRecordId} />
       <div className="flex flex-col gap-1">
         <Label htmlFor="note">Add a note</Label>

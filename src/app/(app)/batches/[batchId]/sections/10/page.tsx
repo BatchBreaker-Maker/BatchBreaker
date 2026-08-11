@@ -47,11 +47,11 @@ export default async function Section10Page({
     : null
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 10: Yield Reconciliation</h1>
 
       {yieldRec && (
-        <dl className="grid max-w-lg grid-cols-2 gap-x-8 gap-y-2 text-sm">
+        <dl className="mx-auto grid w-full max-w-xl grid-cols-2 gap-x-8 gap-y-2 text-sm">
           <dt className="text-text-muted">Variance</dt>
           <dd className="text-text">{variance?.toFixed(3)} {yieldRec.actualYieldUnit}</dd>
           <dt className="text-text-muted">Variance %</dt>

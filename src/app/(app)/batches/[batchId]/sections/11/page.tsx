@@ -35,15 +35,15 @@ export default async function Section11Page({
   const verifiedItems = new Set(checklistItems.filter((i) => i.verified).map((i) => i.itemKey))
 
   return (
-    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 p-4 sm:p-6 lg:p-8">
       <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 11: Packaging Operations</h1>
 
-      <section className="flex max-w-2xl flex-col gap-3">
+      <section className="mx-auto flex w-full max-w-2xl flex-col gap-3">
         <h2 className="text-sm font-semibold text-text">11.1 — Pre-Packaging Checklist</h2>
         {canEdit && <PrePackagingChecklistForm batchRecordId={batchId} verifiedItems={verifiedItems} />}
       </section>
 
-      <section className="flex max-w-2xl flex-col gap-3">
+      <section className="mx-auto flex w-full max-w-3xl flex-col gap-3">
         <h2 className="text-sm font-semibold text-text">11.2 — In-Process Packaging Checks</h2>
         <Table>
           <THead>
@@ -73,7 +73,7 @@ export default async function Section11Page({
         {canEdit && <PackagingCheckForm batchRecordId={batchId} />}
       </section>
 
-      <section className="flex max-w-2xl flex-col gap-3">
+      <section className="mx-auto flex w-full max-w-2xl flex-col gap-3">
         <h2 className="text-sm font-semibold text-text">11.3 — Unused Packaging Return</h2>
         {canEdit && <PackagingReturnForm batchRecordId={batchId} existing={packagingReturn} />}
       </section>

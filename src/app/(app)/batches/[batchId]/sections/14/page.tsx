@@ -62,7 +62,7 @@ export default async function Section14Page({
   const noDeviationsConfirmed = Boolean(batch.noDeviationsConfirmedDate)
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 14: Deviations &amp; Incidents</h1>
 
       {noDeviationsConfirmed && (
@@ -115,7 +115,7 @@ export default async function Section14Page({
         {entries.length === 0 && <p className="text-sm text-text-muted">No deviations logged.</p>}
 
         {canEdit && !noDeviationsConfirmed && (
-          <div className="flex flex-col gap-3">
+          <div className="mx-auto flex w-full max-w-xl flex-col gap-3">
             <DeviationEntryForm batchRecordId={batchId} users={users.map((u) => ({ id: u.id, fullName: u.fullName }))} />
             {entries.length === 0 && (
               <form action={confirmNoDeviations}>

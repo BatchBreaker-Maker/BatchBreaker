@@ -9,7 +9,7 @@ export function CreateUserForm() {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(createUser, undefined)
 
   return (
-    <form action={formAction} className="flex max-w-md flex-col gap-3">
+    <form action={formAction} className="flex w-full flex-col gap-3">
       <div className="flex flex-col gap-1">
         <Label htmlFor="fullName">Full Name</Label>
         <Input id="fullName" name="fullName" required />

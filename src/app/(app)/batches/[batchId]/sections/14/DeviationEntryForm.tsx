@@ -13,7 +13,7 @@ export function DeviationEntryForm({ batchRecordId, users }: { batchRecordId: st
   const defaultDateTime = useDefaultDateTimeLocal()
 
   return (
-    <Card className="w-full max-w-lg">
+    <Card className="w-full">
       <form action={formAction} className="flex flex-col gap-3">
         <input type="hidden" name="batchRecordId" value={batchRecordId} />
         <h3 className="text-sm font-semibold text-text">Log a deviation / incident</h3>

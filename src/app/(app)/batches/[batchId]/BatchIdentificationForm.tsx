@@ -68,7 +68,7 @@ export function BatchIdentificationForm({
         <LockedField label="Record retention deadline" value={retentionDeadline} />
       </dl>
 
-      <div className="flex max-w-2xl flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
         <div className="flex flex-col gap-1">
           <Label htmlFor="finishedProductSpecRef">Finished Product Specification Reference</Label>
           {canEdit ? (

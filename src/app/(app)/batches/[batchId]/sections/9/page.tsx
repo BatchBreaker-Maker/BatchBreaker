@@ -40,7 +40,7 @@ export default async function Section9Page({
   const canApprove = canAccessSection(user.role, 9, 'signoff')
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-text">{batch.batchNumber} — Section 9: In-Process Sampling Log</h1>
         {canApprove && (

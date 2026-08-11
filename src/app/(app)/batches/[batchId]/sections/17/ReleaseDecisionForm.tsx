@@ -9,7 +9,7 @@ export function ReleaseDecisionForm({ batchRecordId }: { batchRecordId: string }
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(saveReleaseDecision, undefined)
 
   return (
-    <form action={formAction} className="flex w-full max-w-lg flex-col gap-4">
+    <form action={formAction} className="mx-auto flex w-full max-w-xl flex-col gap-4">
       <input type="hidden" name="batchRecordId" value={batchRecordId} />
 
       <div className="flex flex-col gap-1">

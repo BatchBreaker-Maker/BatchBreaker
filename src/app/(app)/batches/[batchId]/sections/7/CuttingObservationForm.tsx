@@ -9,7 +9,7 @@ export function CuttingObservationForm({ batchRecordId }: { batchRecordId: strin
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(addCuttingObservation, undefined)
 
   return (
-    <Card className="w-full max-w-2xl">
+    <Card className="mx-auto w-full max-w-3xl">
       <form action={formAction} className="flex flex-col gap-3">
         <input type="hidden" name="batchRecordId" value={batchRecordId} />
         <h3 className="text-sm font-semibold text-text">Add pour observation</h3>
