@@ -109,3 +109,21 @@ export function requireSectionAccess(
     throw new SectionAccessError(section, required)
   }
 }
+
+// Deleting a Section 6.1 additional-step entry is a narrower, bespoke
+// capability that doesn't fit the section-level view/edit/signoff matrix
+// above — it grants MANAGEMENT_COMPLIANCE (normally view-only on section 6)
+// delete rights while excluding PRODUCTION_OPERATOR and QC_USER (who
+// otherwise have edit/view access there), per explicit user direction
+// (2026-08-11). Kept here alongside the other role-based authorization
+// helpers rather than folded into SECTION_ACCESS.
+const ADDITIONAL_PROCESSING_STEP_DELETE_ROLES: Role[] = [
+  'HEAD_OF_PRODUCTION',
+  'HEAD_OF_QC',
+  'SYSTEM_ADMINISTRATOR',
+  'MANAGEMENT_COMPLIANCE',
+]
+
+export function canDeleteAdditionalProcessingStep(role: Role): boolean {
+  return ADDITIONAL_PROCESSING_STEP_DELETE_ROLES.includes(role)
+}

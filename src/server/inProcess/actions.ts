@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { redirectToBatch } from '@/lib/navigation/redirectToBatch'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
-import { requireSectionAccess } from '@/lib/auth/permissionMatrix'
+import { canDeleteAdditionalProcessingStep, requireSectionAccess } from '@/lib/auth/permissionMatrix'
 import { recordAuditEntry } from '@/lib/audit/recordAuditEntry'
 import { PROCESSING_STEP_LABELS, PROCESSING_STEP_ORDER } from '@/lib/workflow/inProcessLabels'
 import type { FormActionState } from '@/server/batches/actions'
@@ -107,6 +107,92 @@ export async function addAdditionalProcessingStep(
     newValue: data.stepDescription,
   })
   redirectToBatch(`/batches/${data.batchRecordId}/sections/6`)
+}
+
+const CorrectAdditionalStepSchema = AddAdditionalStepSchema.extend({
+  correctsEntryId: z.string().uuid(),
+  correctionReason: z.string().min(1),
+})
+
+export async function correctAdditionalProcessingStep(
+  _prevState: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const user = await verifySession()
+  if (!user) redirect('/login')
+  const parsed = CorrectAdditionalStepSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { error: 'Please fill in all required fields, including a reason for the correction.' }
+  const data = parsed.data
+  requireSectionAccess(user.role, 6, 'edit')
+
+  const original = await prisma.additionalProcessingStep.findUnique({ where: { id: data.correctsEntryId } })
+  if (!original || original.batchRecordId !== data.batchRecordId) {
+    return { error: 'Original entry not found.' }
+  }
+  const alreadySuperseded = await prisma.additionalProcessingStep.findFirst({
+    where: { correctsEntryId: original.id },
+  })
+  if (alreadySuperseded) {
+    return { error: 'This entry has already been corrected — correct the newest version instead.' }
+  }
+
+  const step = await prisma.additionalProcessingStep.create({
+    data: {
+      batchRecordId: data.batchRecordId,
+      stepDescription: data.stepDescription,
+      timePerformed: new Date(data.timePerformed),
+      performedByUserId: user.id,
+      observationsNotes: data.observationsNotes || null,
+      correctsEntryId: original.id,
+      correctionReason: data.correctionReason,
+    },
+  })
+  await prisma.sectionCompletionStatus.updateMany({
+    where: { batchRecordId: data.batchRecordId, sectionNumber: 6 },
+    data: { status: 'IN_PROGRESS', approvedByUserId: null, approvedAt: null },
+  })
+  await recordAuditEntry({
+    actionType: 'CORRECT',
+    entityType: 'AdditionalProcessingStep',
+    entityId: step.id,
+    userId: user.id,
+    batchRecordId: data.batchRecordId,
+    oldValue: original.id,
+    newValue: data.stepDescription,
+    correctionReason: data.correctionReason,
+  })
+  redirectToBatch(`/batches/${data.batchRecordId}/sections/6`)
+}
+
+// Deleting an additional step is a hard delete (unlike the correction flow
+// above), restricted to a specific set of roles regardless of their normal
+// section 6 access level — see canDeleteAdditionalProcessingStep. The
+// deleted entry's data is captured in the audit trail before removal since
+// the row itself won't exist to look up afterward.
+export async function deleteAdditionalProcessingStep(formData: FormData): Promise<void> {
+  const user = await verifySession()
+  if (!user) redirect('/login')
+  if (!canDeleteAdditionalProcessingStep(user.role)) {
+    throw new Error('Your role cannot delete additional step entries.')
+  }
+
+  const id = String(formData.get('id') ?? '')
+  const batchRecordId = String(formData.get('batchRecordId') ?? '')
+  const entry = await prisma.additionalProcessingStep.findUnique({ where: { id } })
+  if (!entry || entry.batchRecordId !== batchRecordId) {
+    throw new Error('Entry not found.')
+  }
+
+  await prisma.additionalProcessingStep.delete({ where: { id } })
+  await recordAuditEntry({
+    actionType: 'DELETE',
+    entityType: 'AdditionalProcessingStep',
+    entityId: id,
+    userId: user.id,
+    batchRecordId,
+    oldValue: `${entry.stepDescription} — ${entry.timePerformed.toISOString()}${entry.observationsNotes ? ` — ${entry.observationsNotes}` : ''}`,
+  })
+  redirectToBatch(`/batches/${batchRecordId}/sections/6`)
 }
 
 // ===== 6.2 Visual Homogeneity Checks (5 fixed items, saved together) =====

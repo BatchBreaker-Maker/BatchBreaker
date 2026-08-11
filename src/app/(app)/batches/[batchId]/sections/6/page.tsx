@@ -1,13 +1,11 @@
 import { notFound, redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
-import { canAccessSection } from '@/lib/auth/permissionMatrix'
+import { canAccessSection, canDeleteAdditionalProcessingStep } from '@/lib/auth/permissionMatrix'
 import { ApproveSectionControl } from '@/components/workflow/ApproveSectionControl'
 import { ProcessingStepForm } from './ProcessingStepForm'
-import { AdditionalProcessingStepForm } from './AdditionalProcessingStepForm'
 import { HomogeneityChecksForm } from './HomogeneityChecksForm'
 import { CureRecordForm } from './CureRecordForm'
-import { TBody, TD, TH, THead, TR, Table } from '@/components/ui'
 
 export default async function Section6Page({
   params,
@@ -30,7 +28,11 @@ export default async function Section6Page({
 
   const [steps, additionalSteps, homogeneityChecks, cureRecords, sectionStatus] = await Promise.all([
     prisma.processingStep.findMany({ where: { batchRecordId: batchId } }),
-    prisma.additionalProcessingStep.findMany({ where: { batchRecordId: batchId }, orderBy: { createdAt: 'asc' } }),
+    prisma.additionalProcessingStep.findMany({
+      where: { batchRecordId: batchId },
+      include: { correctedByEntries: { select: { id: true } } },
+      orderBy: { createdAt: 'asc' },
+    }),
     prisma.homogeneityCheck.findMany({ where: { batchRecordId: batchId } }),
     prisma.cureRecord.findMany({ where: { batchRecordId: batchId } }),
     prisma.sectionCompletionStatus.findUnique({
@@ -40,6 +42,7 @@ export default async function Section6Page({
   ])
   const canEdit = canAccessSection(user.role, 6, 'edit')
   const canApprove = canAccessSection(user.role, 6, 'signoff')
+  const canDelete = canDeleteAdditionalProcessingStep(user.role)
   const homogeneityByItem = Object.fromEntries(homogeneityChecks.map((c) => [c.checkItem, c]))
   const existingByStep = Object.fromEntries(steps.map((s) => [s.stepNumber, s]))
 
@@ -68,60 +71,13 @@ export default async function Section6Page({
 
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold text-text">6.1 — Processing Steps &amp; Observations</h2>
-        {canEdit ? (
-          <ProcessingStepForm batchRecordId={batchId} existingByStep={existingByStep} />
-        ) : (
-          <div className="w-full max-w-3xl overflow-x-auto">
-            <Table>
-              <THead>
-                <TR>
-                  <TH>Step</TH>
-                  <TH>Time Performed</TH>
-                  <TH>Observations / Notes</TH>
-                </TR>
-              </THead>
-              <TBody>
-                {Object.values(existingByStep).map((s) => (
-                  <TR key={s.stepNumber}>
-                    <TD>
-                      {s.stepNumber}. {s.stepDescription}
-                    </TD>
-                    <TD>{s.timePerformed.toISOString().slice(0, 16).replace('T', ' ')}</TD>
-                    <TD>{s.observationsNotes || '—'}</TD>
-                  </TR>
-                ))}
-              </TBody>
-            </Table>
-            {steps.length === 0 && <p className="mt-2 text-sm text-text-muted">No processing steps recorded yet.</p>}
-          </div>
-        )}
-
-        <h3 className="text-sm font-semibold text-text">Additional Steps</h3>
-        {additionalSteps.length > 0 ? (
-          <div className="w-full max-w-3xl overflow-x-auto">
-            <Table>
-              <THead>
-                <TR>
-                  <TH>Step / Direction</TH>
-                  <TH>Time Performed</TH>
-                  <TH>Observations / Notes</TH>
-                </TR>
-              </THead>
-              <TBody>
-                {additionalSteps.map((s) => (
-                  <TR key={s.id}>
-                    <TD>{s.stepDescription}</TD>
-                    <TD>{s.timePerformed.toISOString().slice(0, 16).replace('T', ' ')}</TD>
-                    <TD>{s.observationsNotes || '—'}</TD>
-                  </TR>
-                ))}
-              </TBody>
-            </Table>
-          </div>
-        ) : (
-          <p className="text-sm text-text-muted">No additional steps logged.</p>
-        )}
-        {canEdit && <AdditionalProcessingStepForm batchRecordId={batchId} />}
+        <ProcessingStepForm
+          batchRecordId={batchId}
+          existingByStep={existingByStep}
+          additionalSteps={additionalSteps}
+          canEdit={canEdit}
+          canDelete={canDelete}
+        />
       </section>
 
       <section className="flex max-w-2xl flex-col gap-3">

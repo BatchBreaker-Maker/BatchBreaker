@@ -494,9 +494,15 @@ model ProcessingStep {
   @@map("processing_steps")
 }
 
-// Free-form steps beyond the 7 fixed rows above — mirrors
-// AdditionalEquipmentEntry (section 13). Unlike ProcessingStep, this is an
-// open-ended, append-only list (any number of entries per batch).
+// Free-form steps beyond the 7 fixed rows above — an open-ended,
+// append-only list (any number of entries per batch), corrected the same
+// way as the other open-ended log sections (TemperatureEntry etc.): editing
+// an entry creates a new row with a required reason, superseding the
+// original rather than overwriting it. Unlike those other logs, entries can
+// also be hard-deleted, but only by HEAD_OF_PRODUCTION, HEAD_OF_QC,
+// SYSTEM_ADMINISTRATOR, or MANAGEMENT_COMPLIANCE (see
+// deleteAdditionalProcessingStep) — the deletion itself is still captured
+// in the immutable audit trail.
 model AdditionalProcessingStep {
   id                String      @id @default(uuid()) @db.Uuid
   batchRecordId     String      @db.Uuid
@@ -507,6 +513,11 @@ model AdditionalProcessingStep {
   performedByUser   User        @relation(fields: [performedByUserId], references: [id])
   observationsNotes String?
   createdAt         DateTime    @default(now())
+
+  correctsEntryId    String?                    @db.Uuid
+  correctsEntry      AdditionalProcessingStep?  @relation("AdditionalProcessingStepCorrection", fields: [correctsEntryId], references: [id])
+  correctedByEntries AdditionalProcessingStep[] @relation("AdditionalProcessingStepCorrection")
+  correctionReason   String?
 
   @@map("additional_processing_steps")
 }
