@@ -1,6 +1,7 @@
-import type { BatchStatus, ProductType, Role, SectionStatus } from '@/generated/prisma/enums'
+import type { BatchStatus, ProductType, Role, SectionStatus, SignOffRole } from '@/generated/prisma/enums'
 import { getSectionAccess, SECTION_ACCESS } from '@/lib/auth/permissionMatrix'
 import { IMPLEMENTED_SECTIONS } from './sections'
+import { userSignOffRole } from './signOffRoles'
 
 export type SectionDisplayStatus = 'success' | 'warning' | 'danger' | 'neutral'
 
@@ -110,11 +111,14 @@ export function sectionEighteenNeedsInput(
   role: Role,
   batchStatus: BatchStatus,
   hasReleaseDecision: boolean,
-  signOffRoles: Role[],
+  signOffRoles: SignOffRole[],
 ): boolean {
   if (getSectionAccess(role, 18) !== 'signoff') return false
   if (batchStatus !== 'PENDING_QC_REVIEW' || !hasReleaseDecision) return false
-  return !signOffRoles.includes(role)
+  // HEAD_OF_QC and QC_USER share a single "QC" sign-off slot — map the
+  // viewer's literal role to that slot before checking who's already signed.
+  const slot = userSignOffRole(role)
+  return slot != null && !signOffRoles.includes(slot)
 }
 
 export function batchNeedsInput(
@@ -123,7 +127,7 @@ export function batchNeedsInput(
   batchStatus: BatchStatus,
   sectionStatuses: { sectionNumber: number; status: SectionStatus }[],
   hasReleaseDecision: boolean,
-  signOffRoles: Role[],
+  signOffRoles: SignOffRole[],
 ): boolean {
   if (TERMINAL_BATCH_STATUSES.has(batchStatus)) return false
   const statusBySection = new Map(sectionStatuses.map((s) => [s.sectionNumber, s.status]))

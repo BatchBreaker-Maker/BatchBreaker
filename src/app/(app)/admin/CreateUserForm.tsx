@@ -36,7 +36,8 @@ export function CreateUserForm() {
         <Select id="role" name="role" defaultValue="PRODUCTION_OPERATOR" required>
           <option value="PRODUCTION_OPERATOR">Production Operator</option>
           <option value="HEAD_OF_PRODUCTION">Head of Production</option>
-          <option value="QUALITY_UNIT">Quality Unit</option>
+          <option value="HEAD_OF_QC">Head of QC</option>
+          <option value="QC_USER">QC User</option>
           <option value="MANAGEMENT_COMPLIANCE">Management / Compliance</option>
           <option value="SYSTEM_ADMINISTRATOR">System Administrator</option>
         </Select>

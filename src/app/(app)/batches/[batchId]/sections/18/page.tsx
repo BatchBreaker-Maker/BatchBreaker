@@ -3,15 +3,9 @@ import { CheckCircle2 } from 'lucide-react'
 import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { canAccessSection } from '@/lib/auth/permissionMatrix'
-import type { Role } from '@/generated/prisma/enums'
+import { SIGN_OFF_ROLE_ORDER, userSignOffRole } from '@/lib/workflow/signOffRoles'
 import { Card, CardTitle } from '@/components/ui'
 import { SignOffForm } from './SignOffForm'
-
-const SIGNOFF_ROLES: { role: Role; label: string }[] = [
-  { role: 'PRODUCTION_OPERATOR', label: 'Production Operator' },
-  { role: 'HEAD_OF_PRODUCTION', label: 'Head of Production' },
-  { role: 'QUALITY_UNIT', label: 'Head of Quality / QC' },
-]
 
 export default async function Section18Page({
   params,
@@ -39,7 +33,8 @@ export default async function Section18Page({
   if (!batch) notFound()
 
   const readyToSign = batch.status === 'PENDING_QC_REVIEW' && !!batch.releaseDecision?.decision
-  const fullyProcessed = batch.signOffs.length === SIGNOFF_ROLES.length
+  const fullyProcessed = batch.signOffs.length === SIGN_OFF_ROLE_ORDER.length
+  const userSlot = userSignOffRole(user.role)
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
@@ -49,9 +44,9 @@ export default async function Section18Page({
       )}
 
       <ul className="flex max-w-lg flex-col gap-3">
-        {SIGNOFF_ROLES.map(({ role, label }) => {
+        {SIGN_OFF_ROLE_ORDER.map(({ role, label }) => {
           const signOff = batch.signOffs.find((s) => s.role === role)
-          const canSignThisSlot = readyToSign && !signOff && user.role === role && canAccessSection(user.role, 18, 'signoff')
+          const canSignThisSlot = readyToSign && !signOff && userSlot === role && canAccessSection(user.role, 18, 'signoff')
           return (
             <li key={role}>
               <Card>

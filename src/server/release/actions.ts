@@ -8,8 +8,9 @@ import { requireSectionAccess } from '@/lib/auth/permissionMatrix'
 import { verifyPassword } from '@/lib/auth/password'
 import { computeSignatureHash } from '@/lib/auth/signature'
 import { recordAuditEntry } from '@/lib/audit/recordAuditEntry'
+import { userSignOffRole } from '@/lib/workflow/signOffRoles'
 import type { FormActionState } from '@/server/batches/actions'
-import type { Role } from '@/generated/prisma/enums'
+import type { SignOffRole } from '@/generated/prisma/enums'
 
 const DECISION_VALUES = ['RELEASED', 'REJECTED', 'QUARANTINED'] as const
 
@@ -83,7 +84,7 @@ export async function saveReleaseDecision(
   redirectToBatch(`/batches/${batchRecordId}/sections/17`)
 }
 
-const SIGNOFF_ROLES: Role[] = ['PRODUCTION_OPERATOR', 'HEAD_OF_PRODUCTION', 'QUALITY_UNIT']
+const SIGN_OFF_SLOTS: SignOffRole[] = ['PRODUCTION_OPERATOR', 'HEAD_OF_PRODUCTION', 'QC']
 
 export async function signFinalSignOff(
   _prevState: FormActionState,
@@ -96,7 +97,12 @@ export async function signFinalSignOff(
   const password = String(formData.get('password') ?? '')
   requireSectionAccess(user.role, 18, 'signoff')
 
-  if (!SIGNOFF_ROLES.includes(user.role)) {
+  // HEAD_OF_QC and QC_USER both map to the single "QC" slot below — either
+  // one can provide the QC co-signature. Roles with no slot at all (admin,
+  // management/compliance) get null here even though requireSectionAccess
+  // above may have passed for them (admin always has blanket 'signoff').
+  const signOffRole = userSignOffRole(user.role)
+  if (!signOffRole) {
     return { error: 'Your role does not sign off Section 18.' }
   }
 
@@ -108,7 +114,7 @@ export async function signFinalSignOff(
   const [batch, releaseDecision, existingSignOff] = await Promise.all([
     prisma.batchRecord.findUnique({ where: { id: batchRecordId } }),
     prisma.releaseDecision.findUnique({ where: { batchRecordId } }),
-    prisma.finalSignOff.findUnique({ where: { batchRecordId_role: { batchRecordId, role: user.role } } }),
+    prisma.finalSignOff.findUnique({ where: { batchRecordId_role: { batchRecordId, role: signOffRole } } }),
   ])
 
   if (!batch || batch.status !== 'PENDING_QC_REVIEW') {
@@ -127,7 +133,7 @@ export async function signFinalSignOff(
   await prisma.finalSignOff.create({
     data: {
       batchRecordId,
-      role: user.role,
+      role: signOffRole,
       userId: user.id,
       signatureDate: timestamp,
       electronicSignatureHash: signatureHash,
@@ -144,7 +150,7 @@ export async function signFinalSignOff(
   })
 
   const allSignOffs = await prisma.finalSignOff.findMany({ where: { batchRecordId } })
-  const allSigned = SIGNOFF_ROLES.every((role) => allSignOffs.some((s) => s.role === role))
+  const allSigned = SIGN_OFF_SLOTS.every((role) => allSignOffs.some((s) => s.role === role))
 
   if (allSigned) {
     await prisma.$transaction([

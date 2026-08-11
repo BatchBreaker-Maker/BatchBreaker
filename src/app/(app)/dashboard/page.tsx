@@ -9,7 +9,7 @@ import { Badge, Button, buttonClassName, Card, CardTitle, Input, Label, NeedsInp
 import type { BadgeStatus } from '@/components/ui/Badge'
 import type { BatchStatus } from '@/generated/prisma/enums'
 
-const NOTIFIED_ROLES = ['HEAD_OF_PRODUCTION', 'QUALITY_UNIT']
+const NOTIFIED_ROLES = ['HEAD_OF_PRODUCTION', 'HEAD_OF_QC', 'QC_USER']
 const DESTRUCTION_LOOKAHEAD_DAYS = 30
 
 const BATCH_STATUS_BADGE: Record<string, BadgeStatus> = {

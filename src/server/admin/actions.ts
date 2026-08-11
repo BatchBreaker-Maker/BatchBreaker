@@ -8,7 +8,14 @@ import { hashPassword } from '@/lib/auth/password'
 import { recordAuditEntry } from '@/lib/audit/recordAuditEntry'
 import type { FormActionState } from '@/server/batches/actions'
 
-const ROLES = ['PRODUCTION_OPERATOR', 'HEAD_OF_PRODUCTION', 'QUALITY_UNIT', 'MANAGEMENT_COMPLIANCE', 'SYSTEM_ADMINISTRATOR'] as const
+const ROLES = [
+  'PRODUCTION_OPERATOR',
+  'HEAD_OF_PRODUCTION',
+  'HEAD_OF_QC',
+  'QC_USER',
+  'MANAGEMENT_COMPLIANCE',
+  'SYSTEM_ADMINISTRATOR',
+] as const
 
 // /admin isn't one of the 20 batch sections, so it doesn't go through
 // requireSectionAccess — this is the whole gate for every action here.

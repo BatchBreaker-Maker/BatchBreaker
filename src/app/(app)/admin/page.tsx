@@ -8,7 +8,8 @@ import { CreateUserForm } from './CreateUserForm'
 const ROLE_OPTIONS = [
   ['PRODUCTION_OPERATOR', 'Production Operator'],
   ['HEAD_OF_PRODUCTION', 'Head of Production'],
-  ['QUALITY_UNIT', 'Quality Unit'],
+  ['HEAD_OF_QC', 'Head of QC'],
+  ['QC_USER', 'QC User'],
   ['MANAGEMENT_COMPLIANCE', 'Management / Compliance'],
   ['SYSTEM_ADMINISTRATOR', 'System Administrator'],
 ] as const

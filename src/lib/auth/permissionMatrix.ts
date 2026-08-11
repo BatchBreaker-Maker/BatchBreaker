@@ -15,11 +15,19 @@ type MatrixRole = Exclude<Role, 'SYSTEM_ADMINISTRATOR'>
  * privilege for a compliance system) — PRODUCTION_OPERATOR is 'none' on
  * 16/17/20. Flag to the spec owner if the looser table reading was intended.
  */
+// QUALITY_UNIT was split (2026-08-11) into HEAD_OF_QC and QC_USER.
+// QC_USER: Section 14 signoff, Section 18 signoff (QC co-signature),
+// Section 19 edit, view everywhere else — i.e. everything the old
+// QUALITY_UNIT role had except Section 17.
+// HEAD_OF_QC: everything QC_USER has, plus Section 17 signoff — the sole
+// role that can record the batch release decision (RELEASED / REJECTED /
+// QUARANTINED), gated on Section 14 having no open deviations. HEAD_OF_QC is
+// a strict superset of QC_USER throughout this table.
 export const SECTION_ACCESS: Record<number, Record<MatrixRole, AccessLevel>> = {
-  1: { PRODUCTION_OPERATOR: 'view', HEAD_OF_PRODUCTION: 'edit', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  2: { PRODUCTION_OPERATOR: 'view', HEAD_OF_PRODUCTION: 'edit', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  3: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  4: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  1: { PRODUCTION_OPERATOR: 'view', HEAD_OF_PRODUCTION: 'edit', HEAD_OF_QC: 'view', QC_USER: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  2: { PRODUCTION_OPERATOR: 'view', HEAD_OF_PRODUCTION: 'edit', HEAD_OF_QC: 'view', QC_USER: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  3: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', HEAD_OF_QC: 'view', QC_USER: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  4: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', HEAD_OF_QC: 'view', QC_USER: 'view', MANAGEMENT_COMPLIANCE: 'view' },
   // Sections 5,6,7,8,9,12,13: spec §2.2 gives HoP plain "View" here, but the
   // user asked (2026-08-07 UI/UX pass) that HoP have every capability a
   // Production Operator has "in addition to other functions... since HoP is
@@ -30,30 +38,31 @@ export const SECTION_ACCESS: Record<number, Record<MatrixRole, AccessLevel>> = {
   // 'signoff' on 5,6,7,8,9 so they can approve the log once it's accurate,
   // matching section 4's HoP='signoff' which was already set up for exactly
   // this but never wired to an action until Phase 4.
-  5: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  6: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  7: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  8: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  9: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  10: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  11: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  12: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'edit', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  13: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'edit', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  5: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', HEAD_OF_QC: 'view', QC_USER: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  6: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', HEAD_OF_QC: 'view', QC_USER: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  7: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', HEAD_OF_QC: 'view', QC_USER: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  8: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', HEAD_OF_QC: 'view', QC_USER: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  9: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', HEAD_OF_QC: 'view', QC_USER: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  10: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', HEAD_OF_QC: 'view', QC_USER: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  11: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', HEAD_OF_QC: 'view', QC_USER: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  12: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'edit', HEAD_OF_QC: 'view', QC_USER: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  13: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'edit', HEAD_OF_QC: 'view', QC_USER: 'view', MANAGEMENT_COMPLIANCE: 'view' },
   // Spec §2.2 lists QC's cell as "View / Review" (vs. plain "View" elsewhere)
   // and §3.6 requires open deviations be "explicitly cleared by QC with
   // documented rationale" — same compound-cell pattern as Sections 4/10/11's
   // "Verify/Co-sign"/"Approve"/"Verify", which this matrix maps to 'signoff'.
-  // Mapped consistently: QUALITY_UNIT gets 'signoff' here so resolveDeviation
-  // can gate on it.
+  // Both QC roles get 'signoff' here so resolveDeviation can gate on either.
   // HoP bumped to 'edit' here too (see note above sections 5-13) — QC's
   // 'signoff' is unrelated and stays as-is.
-  14: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'edit', QUALITY_UNIT: 'signoff', MANAGEMENT_COMPLIANCE: 'view' },
-  15: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  16: { PRODUCTION_OPERATOR: 'none', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
-  17: { PRODUCTION_OPERATOR: 'none', HEAD_OF_PRODUCTION: 'view', QUALITY_UNIT: 'signoff', MANAGEMENT_COMPLIANCE: 'view' },
-  18: { PRODUCTION_OPERATOR: 'signoff', HEAD_OF_PRODUCTION: 'signoff', QUALITY_UNIT: 'signoff', MANAGEMENT_COMPLIANCE: 'view' },
-  19: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'edit', QUALITY_UNIT: 'edit', MANAGEMENT_COMPLIANCE: 'view' },
-  20: { PRODUCTION_OPERATOR: 'none', HEAD_OF_PRODUCTION: 'view', QUALITY_UNIT: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  14: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'edit', HEAD_OF_QC: 'signoff', QC_USER: 'signoff', MANAGEMENT_COMPLIANCE: 'view' },
+  15: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'signoff', HEAD_OF_QC: 'view', QC_USER: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  16: { PRODUCTION_OPERATOR: 'none', HEAD_OF_PRODUCTION: 'signoff', HEAD_OF_QC: 'view', QC_USER: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  // Only HEAD_OF_QC can record the release decision — QC_USER is view-only
+  // here (2026-08-11 role split).
+  17: { PRODUCTION_OPERATOR: 'none', HEAD_OF_PRODUCTION: 'view', HEAD_OF_QC: 'signoff', QC_USER: 'view', MANAGEMENT_COMPLIANCE: 'view' },
+  18: { PRODUCTION_OPERATOR: 'signoff', HEAD_OF_PRODUCTION: 'signoff', HEAD_OF_QC: 'signoff', QC_USER: 'signoff', MANAGEMENT_COMPLIANCE: 'view' },
+  19: { PRODUCTION_OPERATOR: 'edit', HEAD_OF_PRODUCTION: 'edit', HEAD_OF_QC: 'edit', QC_USER: 'edit', MANAGEMENT_COMPLIANCE: 'view' },
+  20: { PRODUCTION_OPERATOR: 'none', HEAD_OF_PRODUCTION: 'view', HEAD_OF_QC: 'view', QC_USER: 'view', MANAGEMENT_COMPLIANCE: 'view' },
 }
 
 const LEVEL_RANK: Record<AccessLevel, number> = { none: 0, view: 1, edit: 2, signoff: 3 }

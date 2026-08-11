@@ -13,9 +13,21 @@ datasource db {
 enum Role {
   PRODUCTION_OPERATOR
   HEAD_OF_PRODUCTION
-  QUALITY_UNIT
+  HEAD_OF_QC
+  QC_USER
   MANAGEMENT_COMPLIANCE
   SYSTEM_ADMINISTRATOR
+}
+
+// Section 18 (Final Sign-Off) has exactly three signature slots. HEAD_OF_QC
+// and QC_USER both satisfy the "QC" slot (either one provides the required
+// QC co-signature) rather than being two separate slots, so FinalSignOff.role
+// is typed against this narrower enum instead of the full Role — see
+// src/lib/workflow/signOffRoles.ts for the Role -> SignOffRole mapping.
+enum SignOffRole {
+  PRODUCTION_OPERATOR
+  HEAD_OF_PRODUCTION
+  QC
 }
 
 enum BatchStatus {
@@ -365,7 +377,7 @@ model FinalSignOff {
   id                      String      @id @default(uuid()) @db.Uuid
   batchRecordId           String      @db.Uuid
   batchRecord             BatchRecord @relation(fields: [batchRecordId], references: [id], onDelete: Cascade)
-  role                    Role
+  role                    SignOffRole
   userId                  String      @db.Uuid
   user                    User        @relation(fields: [userId], references: [id])
   signatureDate           DateTime    @default(now())
