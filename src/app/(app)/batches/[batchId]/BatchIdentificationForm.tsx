@@ -2,15 +2,12 @@
 
 import { useActionState } from 'react'
 import { updateBatchIdentification, type FormActionState } from '@/server/batches/actions'
-import { Button, Input, Label, LockedFieldFlag } from '@/components/ui'
+import { Button, Input, Label } from '@/components/ui'
 
 function LockedField({ label, value }: { label: string; value: string }) {
   return (
     <>
-      <dt className="flex items-center gap-1 text-text-muted">
-        {label}
-        <LockedFieldFlag />
-      </dt>
+      <dt className="text-text-muted">{label}</dt>
       <dd className="text-text">{value}</dd>
     </>
   )

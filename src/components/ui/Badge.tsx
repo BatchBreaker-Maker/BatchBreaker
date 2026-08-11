@@ -50,11 +50,11 @@ export function NeedsInputFlag({ className = '' }: { className?: string }) {
 export function LockedFieldFlag({ className = '' }: { className?: string }) {
   return (
     <span
-      title="Cannot be changed once the batch record is completed"
+      title="Cannot be changed after the batch record is created"
       tabIndex={0}
       className={`inline-flex shrink-0 items-center ${className}`}
     >
-      <AlertTriangle aria-label="Cannot be changed once the batch record is completed" className="h-3.5 w-3.5 fill-warning/25 text-warning" />
+      <AlertTriangle aria-label="Cannot be changed after the batch record is created" className="h-3.5 w-3.5 fill-warning/25 text-warning" />
     </span>
   )
 }

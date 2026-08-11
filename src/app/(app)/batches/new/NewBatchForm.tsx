@@ -1,9 +1,24 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useState, type ReactNode } from 'react'
 import { createBatchRecord, type FormActionState } from '@/server/batches/actions'
 import { useDefaultDateInput } from '@/lib/dateInputDefaults'
-import { Button, Input, Label, Select } from '@/components/ui'
+import { Button, Input, Label, LockedFieldFlag, Select } from '@/components/ui'
+
+// Wraps Label with the locked-field warning icon — used for every Section 1
+// field except the four (finished product spec ref, manufacturing site/room,
+// complaint/recall ref, adverse event ref) that stay editable after the
+// batch record is created. This is the only place that warning belongs: the
+// batch overview page shows these fields read-only after creation anyway, so
+// repeating the warning there would be redundant (2026-08-11 user direction).
+function LockedLabel({ htmlFor, children }: { htmlFor: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center gap-1">
+      <Label htmlFor={htmlFor}>{children}</Label>
+      <LockedFieldFlag />
+    </div>
+  )
+}
 
 export function NewBatchForm() {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(createBatchRecord, undefined)
@@ -16,7 +31,7 @@ export function NewBatchForm() {
   return (
     <form action={formAction} className="flex w-full max-w-lg flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <Label htmlFor="batchNumber">Batch Number</Label>
+        <LockedLabel htmlFor="batchNumber">Batch Number</LockedLabel>
         <Input
           id="batchNumber"
           name="batchNumber"
@@ -44,17 +59,17 @@ export function NewBatchForm() {
       </div>
 
       <div className="flex flex-col gap-1">
-        <Label htmlFor="productName">Product Name</Label>
+        <LockedLabel htmlFor="productName">Product Name</LockedLabel>
         <Input id="productName" name="productName" required />
       </div>
 
       <div className="flex flex-col gap-1">
-        <Label htmlFor="productCodeSku">Product Code / SKU</Label>
+        <LockedLabel htmlFor="productCodeSku">Product Code / SKU</LockedLabel>
         <Input id="productCodeSku" name="productCodeSku" />
       </div>
 
       <div className="flex flex-col gap-1">
-        <Label htmlFor="productType">Product Type</Label>
+        <LockedLabel htmlFor="productType">Product Type</LockedLabel>
         <Select id="productType" name="productType" defaultValue="BAR_SOAP" required>
           <option value="BAR_SOAP">Bar Soap</option>
           <option value="LIQUID_HAND_SOAP">Liquid Hand Soap</option>
@@ -69,29 +84,29 @@ export function NewBatchForm() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
-          <Label htmlFor="formulaNumber">Formula / Master Formula Record #</Label>
+          <LockedLabel htmlFor="formulaNumber">Formula / Master Formula Record #</LockedLabel>
           <Input id="formulaNumber" name="formulaNumber" required />
         </div>
         <div className="flex flex-col gap-1">
-          <Label htmlFor="formulaVersion">Formula Version / Revision</Label>
+          <LockedLabel htmlFor="formulaVersion">Formula Version / Revision</LockedLabel>
           <Input id="formulaVersion" name="formulaVersion" required />
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
-          <Label htmlFor="batchSizeTarget">Batch Size (target)</Label>
+          <LockedLabel htmlFor="batchSizeTarget">Batch Size (target)</LockedLabel>
           <Input id="batchSizeTarget" name="batchSizeTarget" type="number" step="0.001" min="0" required />
         </div>
         <div className="flex flex-col gap-1">
-          <Label htmlFor="batchSizeUnit">Unit</Label>
+          <LockedLabel htmlFor="batchSizeUnit">Unit</LockedLabel>
           <Input id="batchSizeUnit" name="batchSizeUnit" placeholder="lb" required />
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
-          <Label htmlFor="productionDate">Production Date</Label>
+          <LockedLabel htmlFor="productionDate">Production Date</LockedLabel>
           <Input
             id="productionDate"
             name="productionDate"
@@ -101,7 +116,7 @@ export function NewBatchForm() {
           />
         </div>
         <div className="flex flex-col gap-1">
-          <Label htmlFor="plannedCompletionDate">Planned Completion Date</Label>
+          <LockedLabel htmlFor="plannedCompletionDate">Planned Completion Date</LockedLabel>
           <Input id="plannedCompletionDate" name="plannedCompletionDate" type="date" />
         </div>
       </div>
