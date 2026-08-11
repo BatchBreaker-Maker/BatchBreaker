@@ -28,7 +28,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
       onClick={(e) => {
         if (e.target === ref.current) onClose()
       }}
-      className="w-full max-w-lg rounded-lg border border-border bg-surface p-0 text-text backdrop:bg-black/60"
+      className="fixed top-1/2 left-1/2 m-0 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-surface p-0 text-text backdrop:bg-black/60"
     >
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <h2 className="text-sm font-semibold">{title}</h2>
