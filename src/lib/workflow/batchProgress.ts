@@ -45,15 +45,20 @@ export function sectionDisplayStatus(
 }
 
 // Sections excluded from the generic "needs your input" indicator below.
-// 19 (freeform notes) has no real "done" state — once any note exists its
-// status sticks at IN_PROGRESS forever, so treating that as an outstanding
-// task would flag it permanently for every role with edit access. 18 (Final
-// Sign-Off) never writes SectionCompletionStatus at all — it tracks
-// per-role completion through the separate SignOff table instead — so it's
-// handled by the dedicated sectionEighteenNeedsInput below. 20 needs no
-// special case: no MatrixRole ever holds edit/signoff there, so it's
-// excluded automatically by the access check below.
-const NEEDS_INPUT_EXCLUDED_SECTIONS = new Set([18, 19])
+// 1 (Batch Identification) is marked COMPLETE the instant a batch is
+// created and never changes again, so the generic status-based check would
+// never flag it — it's handled by the dedicated sectionOneNeedsInput below,
+// keyed on the two fields that actually stay editable (finished product spec
+// ref, manufacturing site/room). 19 (freeform notes) has no real "done"
+// state — once any note exists its status sticks at IN_PROGRESS forever, so
+// treating that as an outstanding task would flag it permanently for every
+// role with edit access. 18 (Final Sign-Off) never writes
+// SectionCompletionStatus at all — it tracks per-role completion through the
+// separate SignOff table instead — so it's handled by the dedicated
+// sectionEighteenNeedsInput below. 20 needs no special case: no MatrixRole
+// ever holds edit/signoff there, so it's excluded automatically by the
+// access check below.
+const NEEDS_INPUT_EXCLUDED_SECTIONS = new Set([1, 18, 19])
 
 // Once a batch reaches one of these, the record is closed — open-ended log
 // sections (4-9) can sit at IN_PROGRESS forever if nobody ever ran the
@@ -103,6 +108,23 @@ export function sectionNeedsInput(
     default:
       return false
   }
+}
+
+// Section 1 is marked COMPLETE at creation and never re-evaluated from
+// SectionCompletionStatus, but two of its fields (Finished Product
+// Specification Reference, Manufacturing Site / Room) stay editable
+// afterward per user direction (2026-08-11) — flag the section for whoever
+// can edit it (HEAD_OF_PRODUCTION, plus admin's blanket override) as long as
+// either field is still blank, and clear the moment both are saved.
+export function sectionOneNeedsInput(
+  role: Role,
+  batchStatus: BatchStatus,
+  finishedProductSpecRef: string | null,
+  manufacturingSiteRoom: string | null,
+): boolean {
+  if (TERMINAL_BATCH_STATUSES.has(batchStatus)) return false
+  if (getSectionAccess(role, 1) !== 'edit') return false
+  return !finishedProductSpecRef || !manufacturingSiteRoom
 }
 
 // Section 18 (Final Sign-Off) never writes SectionCompletionStatus — each
@@ -171,12 +193,15 @@ export function batchNeedsInput(
   sectionStatuses: { sectionNumber: number; status: SectionStatus }[],
   hasReleaseDecision: boolean,
   signOffRoles: SignOffRole[],
+  finishedProductSpecRef: string | null,
+  manufacturingSiteRoom: string | null,
 ): boolean {
   if (TERMINAL_BATCH_STATUSES.has(batchStatus)) return false
   const statusBySection = new Map(sectionStatuses.map((s) => [s.sectionNumber, s.status]))
   return (
     IMPLEMENTED_SECTIONS.some((n) => sectionNeedsInput(n, role, productType, batchStatus, statusBySection.get(n))) ||
-    sectionEighteenNeedsInput(role, batchStatus, hasReleaseDecision, signOffRoles)
+    sectionEighteenNeedsInput(role, batchStatus, hasReleaseDecision, signOffRoles) ||
+    sectionOneNeedsInput(role, batchStatus, finishedProductSpecRef, manufacturingSiteRoom)
   )
 }
 

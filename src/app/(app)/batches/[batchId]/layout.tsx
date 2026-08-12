@@ -8,6 +8,7 @@ import {
   sectionDisplayStatus,
   sectionEighteenNeedsInput,
   sectionNeedsInput,
+  sectionOneNeedsInput,
 } from '@/lib/workflow/batchProgress'
 import { BatchSidebar } from './BatchSidebar'
 import { BatchProgressBar } from './BatchProgressBar'
@@ -29,6 +30,8 @@ export default async function BatchLayout({
     select: {
       productType: true,
       status: true,
+      finishedProductSpecRef: true,
+      manufacturingSiteRoom: true,
       sectionStatuses: { select: { sectionNumber: true, status: true } },
       releaseDecision: { select: { decision: true } },
       signOffs: { select: { role: true } },
@@ -45,9 +48,11 @@ export default async function BatchLayout({
   const sectionNeedsInputMap = Object.fromEntries(
     IMPLEMENTED_SECTIONS.map((n) => [
       n,
-      n === 18
-        ? sectionEighteenNeedsInput(user.role, batch.status, !!batch.releaseDecision?.decision, signOffRoles)
-        : sectionNeedsInput(n, user.role, batch.productType, batch.status, statusBySection.get(n)),
+      n === 1
+        ? sectionOneNeedsInput(user.role, batch.status, batch.finishedProductSpecRef, batch.manufacturingSiteRoom)
+        : n === 18
+          ? sectionEighteenNeedsInput(user.role, batch.status, !!batch.releaseDecision?.decision, signOffRoles)
+          : sectionNeedsInput(n, user.role, batch.productType, batch.status, statusBySection.get(n)),
     ]),
   )
   const progress = computeBatchProgress(batch.productType, batch.sectionStatuses)

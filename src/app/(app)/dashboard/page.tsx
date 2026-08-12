@@ -184,6 +184,8 @@ export default async function DashboardPage({
                     b.sectionStatuses,
                     !!b.releaseDecision?.decision,
                     b.signOffs.map((s) => s.role),
+                    b.finishedProductSpecRef,
+                    b.manufacturingSiteRoom,
                   ) && <NeedsInputFlag />}
                 </span>
                 <Badge status={BATCH_STATUS_BADGE[b.status] ?? 'neutral'}>{b.status.replaceAll('_', ' ')}</Badge>
