@@ -26,7 +26,7 @@ export function AppHeader({ fullName, role, isAdmin }: { fullName: string; role:
         </Link>
         <form action={logout}>
           <Button type="submit" variant="secondary">
-            Sign out
+            Sign Out
           </Button>
         </form>
       </div>

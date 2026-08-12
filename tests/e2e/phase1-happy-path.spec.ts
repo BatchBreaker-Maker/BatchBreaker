@@ -14,7 +14,7 @@ async function logout(page: Page) {
   // Sign-out is now in the persistent (app) layout header on every
   // authenticated page (Phase 3b), so no need to detour through /dashboard
   // first — this also doubles as a regression check that it stayed that way.
-  await page.getByRole('button', { name: 'Sign out' }).click()
+  await page.getByRole('button', { name: 'Sign Out' }).click()
   await page.waitForURL('**/login')
 }
 
@@ -28,7 +28,7 @@ async function logout(page: Page) {
 async function submitAndWait(page: Page, buttonName: string) {
   const [response] = await Promise.all([
     page.waitForResponse((resp) => resp.request().method() === 'POST', { timeout: 120_000 }),
-    // exact: true — the (app) layout's persistent "Sign out" button (Phase
+    // exact: true — the (app) layout's persistent "Sign Out" button (Phase
     // 3b) otherwise substring-matches a plain "Sign" name.
     page.getByRole('button', { name: buttonName, exact: true }).click(),
   ])
