@@ -4,6 +4,8 @@ import { prisma } from '@/lib/db'
 import { verifySession } from '@/lib/auth/session'
 import { canAccessSection } from '@/lib/auth/permissionMatrix'
 import { COMPLETENESS_ITEM_LABELS, COMPLETENESS_ITEM_ORDER } from '@/lib/workflow/completenessLabels'
+import { BAR_SOAP_ONLY_SECTIONS } from '@/lib/workflow/batchProgress'
+import { SECTION_TITLES } from '@/lib/workflow/sections'
 import { Badge } from '@/components/ui'
 import { CompletenessReviewForm } from './CompletenessReviewForm'
 import { SignOffButton } from './SignOffButton'
@@ -27,10 +29,24 @@ export default async function Section16Page({
   const batch = await prisma.batchRecord.findUnique({ where: { id: batchId } })
   if (!batch) notFound()
 
-  const items = await prisma.completenessReviewItem.findMany({
-    where: { batchRecordId: batchId },
-    include: { hopSignatureUser: true },
-  })
+  const [items, barSoapSectionStatuses] = await Promise.all([
+    prisma.completenessReviewItem.findMany({
+      where: { batchRecordId: batchId },
+      include: { hopSignatureUser: true },
+    }),
+    batch.productType === 'BAR_SOAP'
+      ? prisma.sectionCompletionStatus.findMany({
+          where: { batchRecordId: batchId, sectionNumber: { in: Array.from(BAR_SOAP_ONLY_SECTIONS) } },
+        })
+      : Promise.resolve([]),
+  ])
+  const incompleteBarSoapSections =
+    batch.productType === 'BAR_SOAP'
+      ? Array.from(BAR_SOAP_ONLY_SECTIONS).filter((n) => {
+          const status = barSoapSectionStatuses.find((s) => s.sectionNumber === n)?.status
+          return status !== 'COMPLETE' && status !== 'APPROVED'
+        })
+      : []
   const verifiedItems = new Set(items.filter((i) => i.verified).map((i) => i.itemKey))
   const naItems = new Set(items.filter((i) => i.notApplicable).map((i) => i.itemKey))
   const allAddressed =
@@ -76,7 +92,30 @@ export default async function Section16Page({
         </ul>
       )}
 
-      {canSignoff && !signedOff && <SignOffButton batchRecordId={batchId} allAddressed={allAddressed} />}
+      {canSignoff && !signedOff && incompleteBarSoapSections.length > 0 && (
+        <p className="text-sm text-warning">
+          This is a bar soap batch —{' '}
+          {incompleteBarSoapSections.map((n, i) => (
+            <span key={n}>
+              {i > 0 && ' and '}
+              Section {n} ({SECTION_TITLES[n]})
+            </span>
+          ))}{' '}
+          must be completed before sign-off.
+        </p>
+      )}
+
+      {canSignoff && !signedOff && (
+        <SignOffButton
+          batchRecordId={batchId}
+          allAddressed={allAddressed && incompleteBarSoapSections.length === 0}
+          disabledReason={
+            incompleteBarSoapSections.length > 0
+              ? `Section${incompleteBarSoapSections.length > 1 ? 's' : ''} ${incompleteBarSoapSections.join(', ')} must be completed first (bar soap batch)`
+              : undefined
+          }
+        />
+      )}
     </div>
   )
 }

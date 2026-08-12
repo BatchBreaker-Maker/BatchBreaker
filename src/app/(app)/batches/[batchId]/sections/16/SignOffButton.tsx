@@ -8,9 +8,11 @@ import { Button } from '@/components/ui'
 export function SignOffButton({
   batchRecordId,
   allAddressed,
+  disabledReason,
 }: {
   batchRecordId: string
   allAddressed: boolean
+  disabledReason?: string
 }) {
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(
     signOffCompletenessReview,
@@ -25,7 +27,7 @@ export function SignOffButton({
         type="submit"
         variant="secondary"
         disabled={!allAddressed || pending}
-        title={allAddressed ? undefined : 'All items must be verified or marked N/A first'}
+        title={allAddressed ? undefined : (disabledReason ?? 'All items must be verified or marked N/A first')}
       >
         {pending ? 'Signing off…' : 'Sign off Section 16 and submit for QC review'}
       </Button>

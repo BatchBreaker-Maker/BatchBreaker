@@ -13,8 +13,10 @@ export type SectionDisplayStatus = 'success' | 'warning' | 'danger' | 'neutral'
 const ALWAYS_EXCLUDED_SECTIONS = new Set([14, 19, 20])
 
 // Cutting/stamping only apply to bar soap — a liquid or "other" batch
-// shouldn't be penalized for having nothing to record there.
-const BAR_SOAP_ONLY_SECTIONS = new Set([7, 8])
+// shouldn't be penalized for having nothing to record there. Exported so
+// signOffCompletenessReview can enforce the same set as a hard sign-off
+// requirement for bar soap batches specifically, rather than duplicating it.
+export const BAR_SOAP_ONLY_SECTIONS = new Set([7, 8])
 
 export function isSectionRequiredForBatch(sectionNumber: number, productType: ProductType): boolean {
   if (ALWAYS_EXCLUDED_SECTIONS.has(sectionNumber)) return false

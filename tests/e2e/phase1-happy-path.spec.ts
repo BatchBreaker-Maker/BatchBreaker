@@ -140,11 +140,16 @@ test('Phase 2 happy path: full Section 1-20 chain with the real HoP/QC review wo
   await submitAndWait(page, 'Add observation')
   await expect(page.getByText('No cutting observations yet.')).not.toBeVisible()
 
-  // Section 8 — Bar Stamping Setup
+  // Section 8 — Bar Stamping Setup (8.1) + one press log entry (8.2, needed
+  // below for HoP to approve the section — approval counts PressRun rows,
+  // not the setup record)
   await page.goto(`/batches/${batchId}/sections/8`)
   await page.locator('#dieStampId').fill('DIE-1')
   await submitAndWait(page, 'Save setup')
   await expect(page.locator('#dieStampId')).toHaveValue('DIE-1')
+  await page.locator('#pressRunDieStampId').fill('DIE-1')
+  await submitAndWait(page, 'Add run')
+  await expect(page.getByText('No press runs logged yet.')).not.toBeVisible()
 
   // Section 9 — In-Process Sampling Log
   await page.goto(`/batches/${batchId}/sections/9`)
@@ -206,10 +211,19 @@ test('Phase 2 happy path: full Section 1-20 chain with the real HoP/QC review wo
   await page.goto(`/batches/${batchId}`)
   await expect(page.getByText('status: PENDING HOP REVIEW')).toBeVisible()
 
-  // --- HoP completes the Completeness Review (Section 16) and signs off —
-  // transitions PENDING_HOP_REVIEW -> PENDING_QC_REVIEW ---
+  // --- HoP approves Sections 7 and 8 — required for sign-off on bar soap
+  // batches specifically (Section 16's hard gate added 2026-08-12) ---
   await logout(page)
   await login(page, 'hop1')
+  await page.goto(`/batches/${batchId}/sections/7`)
+  await submitAndWait(page, 'Approve section')
+  await expect(page.getByText(/^Approved by Harper Production on/)).toBeVisible()
+  await page.goto(`/batches/${batchId}/sections/8`)
+  await submitAndWait(page, 'Approve section')
+  await expect(page.getByText(/^Approved by Harper Production on/)).toBeVisible()
+
+  // --- HoP completes the Completeness Review (Section 16) and signs off —
+  // transitions PENDING_HOP_REVIEW -> PENDING_QC_REVIEW ---
   await page.goto(`/batches/${batchId}/sections/16`)
   const sec16Count = await checkAllAndClick(page, page.locator('input[name$="__verified"]'), 'Save review')
   expect(sec16Count).toBe(21)

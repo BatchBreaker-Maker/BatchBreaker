@@ -7,7 +7,16 @@ import { verifySession } from '@/lib/auth/session'
 import { requireSectionAccess } from '@/lib/auth/permissionMatrix'
 import { recordAuditEntry } from '@/lib/audit/recordAuditEntry'
 import { COMPLETENESS_ITEM_ORDER } from '@/lib/workflow/completenessLabels'
+import { SECTION_TITLES } from '@/lib/workflow/sections'
+import { BAR_SOAP_ONLY_SECTIONS } from '@/lib/workflow/batchProgress'
 import type { FormActionState } from '@/server/batches/actions'
+
+// Sections 7 (Cutting Observations) and 8 (Bar Stamping / Press Operations)
+// are, unlike every other completeness item, genuinely required data for a
+// bar soap batch rather than a pure HoP attestation — sign-off checks their
+// real SectionCompletionStatus, not just the checklist checkbox
+// (2026-08-12 user direction).
+const BAR_SOAP_REQUIRED_SECTIONS = Array.from(BAR_SOAP_ONLY_SECTIONS)
 
 export async function updateCompletenessReview(
   _prevState: FormActionState,
@@ -86,6 +95,21 @@ export async function signOffCompletenessReview(
     items.length === COMPLETENESS_ITEM_ORDER.length && items.every((i) => i.verified || i.notApplicable)
   if (!allAddressed) {
     return { error: 'All completeness review items must be verified or marked N/A before sign-off.' }
+  }
+
+  if (batch.productType === 'BAR_SOAP') {
+    const requiredStatuses = await prisma.sectionCompletionStatus.findMany({
+      where: { batchRecordId, sectionNumber: { in: BAR_SOAP_REQUIRED_SECTIONS } },
+    })
+    const statusBySection = new Map(requiredStatuses.map((s) => [s.sectionNumber, s.status]))
+    const incomplete = BAR_SOAP_REQUIRED_SECTIONS.filter(
+      (n) => statusBySection.get(n) !== 'COMPLETE' && statusBySection.get(n) !== 'APPROVED',
+    )
+    if (incomplete.length > 0) {
+      return {
+        error: `This is a bar soap batch — ${incomplete.map((n) => `Section ${n} (${SECTION_TITLES[n]})`).join(' and ')} must be completed before sign-off.`,
+      }
+    }
   }
 
   const now = new Date()
