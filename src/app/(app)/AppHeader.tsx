@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { logout } from '@/lib/auth/actions'
 import { Logo } from '@/components/Logo'
-import { Button } from '@/components/ui'
+import { Button, buttonClassName } from '@/components/ui'
 import { HeaderBatchSearch } from './HeaderBatchSearch'
 import type { Role } from '@/generated/prisma/enums'
 
@@ -21,6 +21,9 @@ export function AppHeader({ fullName, role, isAdmin }: { fullName: string; role:
             Admin
           </Link>
         )}
+        <Link href="/dashboard" className={buttonClassName('secondary')}>
+          All Batches
+        </Link>
         <form action={logout}>
           <Button type="submit" variant="secondary">
             Sign out
