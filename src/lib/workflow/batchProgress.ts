@@ -121,6 +121,47 @@ export function sectionEighteenNeedsInput(
   return slot != null && !signOffRoles.includes(slot)
 }
 
+// Section 18's three sign-off slots map to a representative literal Role for
+// checking SECTION_ACCESS — PRODUCTION_OPERATOR and HEAD_OF_PRODUCTION map
+// 1:1, but "QC" is shared by HEAD_OF_QC and QC_USER, so HEAD_OF_QC (the
+// strict superset per permissionMatrix's own comment) stands in for the slot
+// to pick up HEAD_OF_QC-only responsibilities like Section 17.
+const SIGN_OFF_SLOT_REPRESENTATIVE_ROLE: Record<SignOffRole, Role> = {
+  PRODUCTION_OPERATOR: 'PRODUCTION_OPERATOR',
+  HEAD_OF_PRODUCTION: 'HEAD_OF_PRODUCTION',
+  QC: 'HEAD_OF_QC',
+}
+
+// Section 14 is deliberately excluded here even though it has real
+// edit/signoff rows: its SectionCompletionStatus caps at COMPLETE and never
+// reaches APPROVED, so sectionNeedsInput would flag it as outstanding for
+// HEAD_OF_QC forever, even with zero open deviations. The real blocking
+// condition (open deviations) is enforced separately in saveReleaseDecision
+// and should be surfaced by the caller using the actual open-deviation
+// count, not this generic per-section check. 18 is the section being
+// computed for; 19/20 never reach a real "done" state (see
+// NEEDS_INPUT_EXCLUDED_SECTIONS above).
+const SIGN_OFF_CHECKLIST_EXCLUDED_SECTIONS = new Set([14, 18, 19, 20])
+
+// Powers the "waiting on" checklist shown per sign-off slot in Section 18 —
+// reuses the exact same sectionNeedsInput definition that already drives the
+// sidebar/dashboard "Input Needed" flags, so the two stay consistent by
+// construction rather than by two separately-maintained rules.
+export function outstandingSectionsForSignOffSlot(
+  slot: SignOffRole,
+  productType: ProductType,
+  batchStatus: BatchStatus,
+  sectionStatuses: { sectionNumber: number; status: SectionStatus }[],
+): number[] {
+  const role = SIGN_OFF_SLOT_REPRESENTATIVE_ROLE[slot]
+  const statusBySection = new Map(sectionStatuses.map((s) => [s.sectionNumber, s.status]))
+  return IMPLEMENTED_SECTIONS.filter(
+    (n) =>
+      !SIGN_OFF_CHECKLIST_EXCLUDED_SECTIONS.has(n) &&
+      sectionNeedsInput(n, role, productType, batchStatus, statusBySection.get(n)),
+  )
+}
+
 export function batchNeedsInput(
   role: Role,
   productType: ProductType,
